@@ -460,7 +460,7 @@ jobs:
           EOF_FILE
 
       - name: APK yığ
-        run: gradle -p _apk assembleDebug --no-daemon --stacktrace
+        run: bash patch.sh && gradle -p _apk assembleDebug --no-daemon --stacktrace
 
       - name: Release-ə yüklə
         env:
