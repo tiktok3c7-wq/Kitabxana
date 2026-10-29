@@ -1,0 +1,468 @@
+name: APK yığ
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Android SDK lisenziyaları
+        run: yes | sdkmanager --licenses > /dev/null || true
+
+      - name: Layihəni yarat
+        run: |
+          set -e
+          P=_apk
+          mkdir -p $P/app/src/main/java/com/kitabxanam/app $P/app/src/main/res/xml $P/app/src/main/res/values $P/app/src/main/assets
+          cp index.html $P/app/src/main/assets/index.html
+          cat > $P/settings.gradle <<'EOF_FILE'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "Kitabxanam"
+          include ':app'
+          EOF_FILE
+          cat > $P/build.gradle <<'EOF_FILE'
+          plugins {
+              id 'com.android.application' version '8.5.2' apply false
+          }
+          EOF_FILE
+          cat > $P/gradle.properties <<'EOF_FILE'
+          org.gradle.jvmargs=-Xmx2g
+          android.useAndroidX=true
+          android.nonTransitiveRClass=true
+          EOF_FILE
+          cat > $P/app/build.gradle <<'EOF_FILE'
+          plugins {
+              id 'com.android.application'
+          }
+          android {
+              namespace 'com.kitabxanam.app'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'com.kitabxanam.app'
+                  minSdk 29
+                  targetSdk 34
+                  versionCode 1
+                  versionName '1.0'
+              }
+              signingConfigs {
+                  debug {
+                      storeFile file('ks.p12')
+                      storeType 'pkcs12'
+                      storePassword 'kitabxana'
+                      keyAlias 'kitabxana'
+                      keyPassword 'kitabxana'
+                  }
+              }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          dependencies {
+              implementation 'androidx.core:core:1.13.1'
+          }
+          EOF_FILE
+          cat > $P/app/src/main/AndroidManifest.xml <<'EOF_FILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:label="Kitabxanam"
+                  android:theme="@style/AppTheme"
+                  android:allowBackup="true"
+                  android:hardwareAccelerated="true">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:screenOrientation="portrait"
+                      android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout|uiMode|density"
+                      android:windowSoftInputMode="adjustResize">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+                  <provider
+                      android:name="androidx.core.content.FileProvider"
+                      android:authorities="${applicationId}.fileprovider"
+                      android:exported="false"
+                      android:grantUriPermissions="true">
+                      <meta-data
+                          android:name="android.support.FILE_PROVIDER_PATHS"
+                          android:resource="@xml/file_paths" />
+                  </provider>
+              </application>
+          </manifest>
+          EOF_FILE
+          cat > $P/app/src/main/res/xml/file_paths.xml <<'EOF_FILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <paths>
+              <cache-path name="shared" path="shared/" />
+          </paths>
+          EOF_FILE
+          cat > $P/app/src/main/res/values/styles.xml <<'EOF_FILE'
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+                  <item name="android:windowBackground">@android:color/black</item>
+                  <item name="android:statusBarColor">@android:color/black</item>
+                  <item name="android:navigationBarColor">@android:color/black</item>
+              </style>
+          </resources>
+          EOF_FILE
+          cat > $P/app/src/main/assets/inject.js <<'EOF_FILE'
+          (function(){
+          if(window.__kbInj)return;window.__kbInj=true;
+          function b64(blob){return new Promise(function(res,rej){var fr=new FileReader();fr.onload=function(){res(String(fr.result).split(',')[1]||'');};fr.onerror=function(){rej(fr.error);};fr.readAsDataURL(blob);});}
+          if(typeof window.ClipboardItem==='undefined'){
+            window.ClipboardItem=function(d){this._d=d;this.types=Object.keys(d);};
+            window.ClipboardItem.prototype.getType=function(t){return Promise.resolve(this._d[t]);};
+          }
+          var ow=function(items){
+            var it=items&&items[0];
+            if(!it)return Promise.reject(new Error('bos'));
+            var t=(it.types||[]).filter(function(x){return x.indexOf('image/')===0;})[0];
+            if(!t)return Promise.reject(new Error('yalniz sekil'));
+            return it.getType(t).then(b64).then(function(s){Android.copyImage(s);});
+          };
+          if(navigator.clipboard){try{navigator.clipboard.write=ow;}catch(e){}}
+          else{try{Object.defineProperty(navigator,'clipboard',{value:{write:ow,writeText:function(){return Promise.reject(new Error('yox'));}},configurable:true});}catch(e){}}
+          try{
+            navigator.canShare=function(d){return !!(d&&d.files&&d.files.length);};
+            navigator.share=function(d){
+              if(d&&d.files&&d.files.length){var f=d.files[0];return b64(f).then(function(s){Android.shareFile(f.name||'sekil.png',f.type||'image/png',s);});}
+              return Promise.reject(new Error('desteklenmir'));};
+          }catch(e){}
+          var oc=HTMLAnchorElement.prototype.click;
+          HTMLAnchorElement.prototype.click=function(){
+            var a=this,h=a.href||'';
+            if(a.download&&(h.indexOf('blob:')===0||h.indexOf('data:')===0)){
+              fetch(h).then(function(r){return r.blob();}).then(function(b){
+                return b64(b).then(function(s){Android.saveFile(a.download||'fayl',b.type||'application/octet-stream',s);});
+              });
+              return;
+            }
+            return oc.apply(this,arguments);
+          };
+          })();
+          EOF_FILE
+          cat > $P/app/src/main/java/com/kitabxanam/app/MainActivity.java <<'EOF_FILE'
+          package com.kitabxanam.app;
+
+          import android.app.Activity;
+          import android.content.ClipData;
+          import android.content.ClipboardManager;
+          import android.content.ContentValues;
+          import android.content.Intent;
+          import android.graphics.Color;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import android.os.Environment;
+          import android.provider.MediaStore;
+          import android.util.Base64;
+          import android.webkit.JavascriptInterface;
+          import android.webkit.ValueCallback;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebResourceResponse;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import android.widget.Toast;
+
+          import androidx.core.content.FileProvider;
+
+          import java.io.ByteArrayInputStream;
+          import java.io.ByteArrayOutputStream;
+          import java.io.File;
+          import java.io.FileOutputStream;
+          import java.io.IOException;
+          import java.io.InputStream;
+          import java.io.OutputStream;
+
+          public class MainActivity extends Activity {
+              static final String HOST = "appassets.androidplatform.net";
+              static final int REQ_FILE = 7;
+              WebView web;
+              ValueCallback<Uri[]> chooser;
+              String inject = "";
+
+              @Override
+              protected void onCreate(Bundle b) {
+                  super.onCreate(b);
+                  getWindow().setStatusBarColor(Color.BLACK);
+                  getWindow().setNavigationBarColor(Color.BLACK);
+                  try {
+                      File d = new File(getCacheDir(), "shared");
+                      File[] old = d.listFiles();
+                      if (old != null) for (File f : old) f.delete();
+                  } catch (Exception e) { }
+                  try { inject = new String(readAll(getAssets().open("inject.js")), "UTF-8"); } catch (Exception e) { }
+
+                  web = new WebView(this);
+                  web.setBackgroundColor(Color.BLACK);
+                  setContentView(web);
+
+                  WebSettings s = web.getSettings();
+                  s.setJavaScriptEnabled(true);
+                  s.setDomStorageEnabled(true);
+                  s.setDatabaseEnabled(true);
+                  s.setMediaPlaybackRequiresUserGesture(false);
+                  s.setAllowFileAccess(false);
+                  s.setSupportZoom(false);
+                  s.setBuiltInZoomControls(false);
+
+                  web.addJavascriptInterface(new Bridge(), "Android");
+
+                  web.setWebViewClient(new WebViewClient() {
+                      @Override
+                      public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest r) {
+                          Uri u = r.getUrl();
+                          if (HOST.equals(u.getHost())) {
+                              String p = u.getPath();
+                              if (p == null || p.isEmpty() || p.equals("/")) p = "/index.html";
+                              try {
+                                  InputStream in = getAssets().open(p.substring(1));
+                                  return new WebResourceResponse(mime(p), "UTF-8", in);
+                              } catch (Exception e) {
+                                  return new WebResourceResponse("text/plain", "UTF-8", 404, "Not Found", null,
+                                          new ByteArrayInputStream(new byte[0]));
+                              }
+                          }
+                          return null;
+                      }
+
+                      @Override
+                      public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
+                          Uri u = r.getUrl();
+                          if (HOST.equals(u.getHost())) return false;
+                          try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception e) { }
+                          return true;
+                      }
+
+                      @Override
+                      public void onPageFinished(WebView v, String url) {
+                          v.evaluateJavascript(inject, null);
+                      }
+                  });
+
+                  web.setWebChromeClient(new WebChromeClient() {
+                      @Override
+                      public boolean onShowFileChooser(WebView w, ValueCallback<Uri[]> cb, FileChooserParams p) {
+                          if (chooser != null) chooser.onReceiveValue(null);
+                          chooser = cb;
+                          try {
+                              startActivityForResult(p.createIntent(), REQ_FILE);
+                          } catch (Exception e) {
+                              chooser = null;
+                              return false;
+                          }
+                          return true;
+                      }
+                  });
+
+                  web.loadUrl("https://" + HOST + "/index.html");
+              }
+
+              @Override
+              protected void onActivityResult(int rc, int res, Intent data) {
+                  if (rc == REQ_FILE) {
+                      if (chooser != null) {
+                          chooser.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(res, data));
+                          chooser = null;
+                      }
+                      return;
+                  }
+                  super.onActivityResult(rc, res, data);
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (web != null && web.canGoBack()) web.goBack();
+                  else super.onBackPressed();
+              }
+
+              static String mime(String p) {
+                  if (p.endsWith(".html")) return "text/html";
+                  if (p.endsWith(".js")) return "application/javascript";
+                  if (p.endsWith(".css")) return "text/css";
+                  if (p.endsWith(".json")) return "application/json";
+                  if (p.endsWith(".png")) return "image/png";
+                  if (p.endsWith(".svg")) return "image/svg+xml";
+                  return "application/octet-stream";
+              }
+
+              static byte[] readAll(InputStream in) throws IOException {
+                  ByteArrayOutputStream o = new ByteArrayOutputStream();
+                  byte[] buf = new byte[8192];
+                  int n;
+                  while ((n = in.read(buf)) > 0) o.write(buf, 0, n);
+                  in.close();
+                  return o.toByteArray();
+              }
+
+              void toast(final String m) {
+                  runOnUiThread(new Runnable() {
+                      public void run() { Toast.makeText(MainActivity.this, m, Toast.LENGTH_SHORT).show(); }
+                  });
+              }
+
+              File tmpFile(String name, String b64) throws IOException {
+                  File d = new File(getCacheDir(), "shared");
+                  d.mkdirs();
+                  File f = new File(d, name.replaceAll("[^A-Za-z0-9._-]", "_"));
+                  FileOutputStream o = new FileOutputStream(f);
+                  o.write(Base64.decode(b64, Base64.DEFAULT));
+                  o.close();
+                  return f;
+              }
+
+              class Bridge {
+                  @JavascriptInterface
+                  public void copyImage(String b64) {
+                      try {
+                          File f = tmpFile("kopya.png", b64);
+                          Uri u = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".fileprovider", f);
+                          final ClipData cd = ClipData.newUri(getContentResolver(), "image", u);
+                          runOnUiThread(new Runnable() {
+                              public void run() {
+                                  ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+                                  cm.setPrimaryClip(cd);
+                                  Toast.makeText(MainActivity.this, "Şəkil panoya kopyalandı ✓", Toast.LENGTH_SHORT).show();
+                              }
+                          });
+                      } catch (Exception e) {
+                          toast("Kopyalanmadı");
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public void shareFile(String name, String mime, String b64) {
+                      try {
+                          File f = tmpFile(name, b64);
+                          Uri u = FileProvider.getUriForFile(MainActivity.this, getPackageName() + ".fileprovider", f);
+                          Intent i = new Intent(Intent.ACTION_SEND);
+                          i.setType(mime);
+                          i.putExtra(Intent.EXTRA_STREAM, u);
+                          i.setClipData(ClipData.newUri(getContentResolver(), "file", u));
+                          i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                          final Intent c = Intent.createChooser(i, "Paylaş");
+                          c.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                          runOnUiThread(new Runnable() {
+                              public void run() { startActivity(c); }
+                          });
+                      } catch (Exception e) {
+                          toast("Paylaşmaq alınmadı");
+                      }
+                  }
+
+                  @JavascriptInterface
+                  public void saveFile(String name, String mime, String b64) {
+                      try {
+                          boolean img = mime.startsWith("image/");
+                          ContentValues v = new ContentValues();
+                          v.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+                          v.put(MediaStore.MediaColumns.MIME_TYPE, mime);
+                          v.put(MediaStore.MediaColumns.RELATIVE_PATH,
+                                  (img ? Environment.DIRECTORY_PICTURES : Environment.DIRECTORY_DOWNLOADS) + "/Kitabxanam");
+                          Uri base = img ? MediaStore.Images.Media.EXTERNAL_CONTENT_URI : MediaStore.Downloads.EXTERNAL_CONTENT_URI;
+                          Uri u = getContentResolver().insert(base, v);
+                          OutputStream os = getContentResolver().openOutputStream(u);
+                          os.write(Base64.decode(b64, Base64.DEFAULT));
+                          os.close();
+                          toast(img ? "Qalereyaya saxlandı ✓" : "Yükləmələrə saxlandı ✓");
+                      } catch (Exception e) {
+                          toast("Saxlamaq alınmadı");
+                      }
+                  }
+              }
+          }
+          EOF_FILE
+          base64 -d > $P/app/ks.p12 <<'EOF_FILE'
+          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
+          EOF_FILE
+
+      - name: APK yığ
+        run: gradle -p _apk assembleDebug --no-daemon --stacktrace
+
+      - name: Release-ə yüklə
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp _apk/app/build/outputs/apk/debug/app-debug.apk Kitabxanam.apk
+          gh release create "apk-${{ github.run_number }}" Kitabxanam.apk --target "${{ github.sha }}" --title "Kitabxanam APK ${{ github.run_number }}" --notes "APK-nı yüklə və qur."
