@@ -30,8 +30,9 @@ jobs:
         run: |
           set -e
           P=_apk
-          mkdir -p $P/app/src/main/java/com/kitabxanam/app $P/app/src/main/res/xml $P/app/src/main/res/values $P/app/src/main/assets
+          mkdir -p $P/app/src/main/java/com/kitabxanam/app $P/app/src/main/res/xml $P/app/src/main/res/values $P/app/src/main/res/mipmap-xxxhdpi $P/app/src/main/assets
           cp index.html $P/app/src/main/assets/index.html
+          cp icon.png $P/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
           cat > $P/settings.gradle <<'EOF_FILE'
           pluginManagement {
               repositories {
@@ -97,6 +98,7 @@ jobs:
               <uses-permission android:name="android.permission.INTERNET" />
               <application
                   android:label="Kitabxanam"
+                  android:icon="@mipmap/ic_launcher"
                   android:theme="@style/AppTheme"
                   android:allowBackup="true"
                   android:hardwareAccelerated="true">
