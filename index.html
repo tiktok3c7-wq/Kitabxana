@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Kitabxanam</title>
+<!-- PDF OXUYUCUSU (yalnız cdnjs). İnternet olmasa PDF telefonun daxili oxuyucusu ilə açılır -->
+<script src="pdf.min.js" onload="window.__pdfLocal=1"></script>
+<script>window.pdfjsLib||document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"><\/script>')</script>
+<script>if(typeof pdfjsLib!=='undefined')pdfjsLib.GlobalWorkerOptions.workerSrc=window.__pdfLocal?'pdf.worker.min.js':'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; background:#000; color:#fff; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; overflow:hidden; overscroll-behavior:none; user-select:none; -webkit-user-select:none; }
+#app { position:relative; width:100%; height:100vh; height:100dvh; overflow:hidden; }
+.bg { position:fixed; inset:0; z-index:0; pointer-events:none; background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.08), transparent 55%), radial-gradient(circle at 75% 80%, rgba(255,255,255,0.04), transparent 60%), #000; }
+.screen { position:absolute; inset:0; z-index:1; display:flex; flex-direction:column; transition:transform .42s cubic-bezier(.2,.8,.2,1), opacity .42s; }
+.screen.hidden { display:none; }
+.screen.slide-out-left { transform:translateX(-30%); opacity:0; pointer-events:none; }
+.screen.slide-out-right { transform:translateX(100%); opacity:0; pointer-events:none; }
+.screen.slide-in-right { animation:slideInRight .42s cubic-bezier(.2,.8,.2,1) forwards; }
+.screen.slide-in-left { animation:slideInLeft .42s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes slideInRight { from { transform:translateX(100%); opacity:.4; } to { transform:translateX(0); opacity:1; } }
+@keyframes slideInLeft { from { transform:translateX(-30%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+.content { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding-bottom:110px; }
+.content::-webkit-scrollbar { display:none; }
+.header { padding:24px 20px 8px; padding-top:calc(24px + env(safe-area-inset-top, 0px)); display:flex; align-items:center; gap:12px; position:relative; z-index:2; }
+.header-icon { width:46px; height:46px; border-radius:15px; background:#fff; color:#000; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.header-text { flex:1; min-width:0; padding-right:120px; }
+.header-title { font-size:27px; font-weight:700; letter-spacing:-0.6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.header-sub { font-size:13px; color:rgba(255,255,255,0.4); margin-top:3px; padding-left:5px; }
+.top-stick-figure { position:absolute; top:calc(10px + env(safe-area-inset-top, 0px)); right:10px; width:130px; height:130px; pointer-events:none; z-index:1; transform: scaleX(-1); }
+.stick-svg { width:100%; height:100%; overflow:visible; }
+.palm-wrapper { position:absolute; left:80%; bottom:58%; width:0; height:0; }
+.palm-number { position:absolute; left:0; bottom:0; transform:translateX(-50%) scaleX(-1); font-size:36px; font-weight:900; color:#fff; letter-spacing:-1.5px; text-shadow: 0 0 12px rgba(255,255,255,0.9), 0 0 24px rgba(255,255,255,0.5); animation:numberFloat 2.6s ease-in-out infinite; }
+@keyframes numberFloat { 0%,100% { transform:translateX(-50%) scaleX(-1) translateY(0); } 50% { transform:translateX(-50%) scaleX(-1) translateY(-7px); } }
+.shelf-area { padding:0 16px; position:relative; margin-top:8px; }
+.shelf-row { display:flex; gap:10px; overflow-x:auto; padding:8px 6px 6px; align-items:flex-end; min-height:120px; scroll-snap-type:x proximity; scrollbar-width:none; }
+.shelf-row::-webkit-scrollbar { display:none; }
+.shelf-plank { height:10px; margin:-2px 6px 0; background:linear-gradient(to bottom, #333 0%, #1a1a1a 40%, #050505 100%); border-radius:2px; border-top:1px solid rgba(255,255,255,0.15); position:relative; }
+.book { flex-shrink:0; width:68px; height:112px; border-radius:5px 5px 2px 2px; background-size:cover; background-position:center; background-color:#1a1a1a; position:relative; overflow:hidden; cursor:pointer; border:1px solid rgba(255,255,255,0.12); scroll-snap-align:start; transition:transform .18s; opacity:0; animation:bookIn .55s cubic-bezier(.2,.8,.2,1) forwards; animation-delay:calc(var(--i, 0) * 55ms); }
+@keyframes bookIn { 0% { opacity:0; transform:translateY(25px) rotate(-4deg); } 60% { transform:translateY(-3px) rotate(1deg); } 100% { opacity:1; transform:translateY(0) rotate(0); } }
+.book:active { transform:scale(0.94) translateY(-2px); }
+.book-default-icon { position:absolute; top:22px; left:0; right:0; text-align:center; font-size:26px; opacity:0.4; }
+.book-gradient { position:absolute; inset:0; background:linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.9) 100%); }
+.book-content { position:absolute; bottom:6px; left:3px; right:3px; text-align:center; }
+.book-name { font-size:9px; font-weight:700; color:#fff; line-height:1.15; max-height:21px; overflow:hidden; word-break:break-word; }
+.book-count { font-size:8px; font-weight:600; color:rgba(255,255,255,0.6); margin-top:2px; }
+.book-count-badge { position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.7); color:#fff; font-size:9px; font-weight:800; padding:2px 6px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); }
+.shelf-empty { width:100%; display:flex; align-items:center; justify-content:center; height:112px; color:rgba(255,255,255,0.28); font-size:13px; text-align:center; }
+.favorites-btn { margin:10px 16px 0; padding:14px 20px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); border-radius:16px; display:flex; align-items:center; gap:12px; cursor:pointer; color:#fff; font-size:15px; font-weight:600; }
+.favorites-btn:active { transform:scale(0.97); background:rgba(255,255,255,0.15); }
+.favorites-btn .star-icon { font-size:22px; color:#ffd700; }
+.favorites-btn .fav-count { margin-left:auto; background:rgba(255,255,255,0.15); padding:3px 10px; border-radius:12px; font-size:12px; }
+.folder-header { display:flex; align-items:center; gap:10px; padding:8px 16px 12px; padding-top:calc(8px + env(safe-area-inset-top, 0px)); }
+.folder-title { font-size:22px; font-weight:700; flex:1; word-break:break-word; }
+.folder-subtitle { font-size:12px; color:rgba(255,255,255,0.4); margin-top:2px; }
+.media-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; padding:0 14px; }
+.media-tile { aspect-ratio:1; border-radius:12px; overflow:hidden; background:#161616; position:relative; cursor:pointer; border:1px solid rgba(255,255,255,0.05); opacity:0; transform:scale(0.85); animation:mediaIn .4s cubic-bezier(.2,.8,.2,1) forwards; }
+@keyframes mediaIn { to { opacity:1; transform:scale(1); } }
+.media-tile:active { transform:scale(0.92); }
+.media-tile img { width:100%; height:100%; object-fit:cover; display:block; }
+.pdf-badge, .video-badge { position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.8); color:#fff; font-size:8px; font-weight:800; padding:3px 6px; border-radius:5px; }
+.pdf-tile-placeholder { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#1e1e1e; }
+.pdf-icon { font-size:32px; color:rgba(255,255,255,0.8); margin-bottom:6px; }
+.media-name-overlay { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 60%, transparent 100%); padding:20px 6px 6px; pointer-events:none; }
+.media-name-text { font-size:10px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.media-folder-text { font-size:8px; font-weight:600; color:rgba(255,255,255,0.65); margin-top:3px; }
+.fav-badge { position:absolute; top:5px; left:5px; font-size:14px; }
+.video-play-icon { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:32px; height:32px; border-radius:50%; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; border:1px solid rgba(255,255,255,0.2); }
+.fab { position:fixed; right:20px; bottom:calc(24px + env(safe-area-inset-bottom, 0px)); background:#fff; color:#000; padding:16px 22px; border-radius:100px; font-weight:700; font-size:15px; display:flex; align-items:center; gap:8px; border:none; cursor:pointer; z-index:10; }
+.fab:active { transform:scale(0.92); }
+.fab.round { padding:0; width:58px; height:58px; justify-content:center; font-size:26px; }
+.back-btn { width:42px; height:42px; border-radius:50%; background:rgba(255,255,255,0.08); color:#fff; border:none; display:flex; align-items:center; justify-content:center; font-size:22px; cursor:pointer; }
+.back-btn:active { background:rgba(255,255,255,0.22); }
+.empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; text-align:center; gap:14px; }
+.empty-icon { font-size:72px; opacity:0.18; }
+.empty-title { font-size:18px; font-weight:500; color:rgba(255,255,255,0.5); }
+.empty-sub { font-size:13px; color:rgba(255,255,255,0.3); }
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:100; display:flex; align-items:flex-end; justify-content:center; opacity:0; pointer-events:none; transition:opacity .3s; }
+.modal-overlay.center { align-items:center; }
+.modal-overlay.active { opacity:1; pointer-events:auto; }
+.modal { background:#161616; border-radius:24px 24px 0 0; padding:26px; width:100%; max-width:500px; border:1px solid rgba(255,255,255,0.1); border-bottom:none; transform:translateY(100%); opacity:0; transition:transform .38s cubic-bezier(.2,.9,.3,1.1), opacity .3s; }
+.modal-overlay.center .modal { border-radius:24px; border-bottom:1px solid rgba(255,255,255,0.1); transform:scale(0.85) translateY(0); max-width:360px; }
+.modal-overlay.active .modal { transform:translateY(0) scale(1); opacity:1; }
+.modal-title { font-size:19px; font-weight:600; margin-bottom:16px; color:#fff; }
+.modal-input { width:100%; background:#0a0a0a; border:1px solid rgba(255,255,255,0.15); color:#fff; padding:15px 16px; border-radius:12px; font-size:15px; outline:none; user-select:text; -webkit-user-select:text; }
+.modal-input:focus { border-color:#fff; }
+.modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:22px; flex-wrap:wrap; }
+.btn { padding:11px 20px; border-radius:100px; border:none; font-size:14px; font-weight:600; cursor:pointer; background:transparent; color:rgba(255,255,255,0.6); }
+.btn.primary { background:#fff; color:#000; }
+.btn.danger { color:#ff5a5a; }
+.sort-list { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.sort-item { padding:16px; border-radius:14px; background:rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:space-between; color:#fff; font-size:15px; font-weight:500; cursor:pointer; }
+.sort-item.active { background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); }
+.sort-check { opacity:0; color:#fff; }
+.sort-item.active .sort-check { opacity:1; }
+
+/* ===== Oxuyucu ===== */
+.viewer { background:#111; }
+.viewer-content { flex:1; position:relative; overflow:hidden; touch-action:none; }
+.zoomable-wrapper { position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform; }
+.pg { position:absolute; left:0; background:#fff; }
+.pg canvas, .pg img { position:absolute; left:0; top:0; width:100%; height:100%; display:block; pointer-events:none; }
+body.vidmode #tbPg,body.vidmode #nativeBtn{display:none!important}
+.viewer-content video { position:absolute; inset:0; width:100%; height:100%; background:#000; object-fit:contain; pointer-events:none; }
+.viewer-msg { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#aaa; gap:10px; }
+.viewer-back, .viewer-fav { position:absolute; top:calc(14px + env(safe-area-inset-top, 0px)); z-index:35; width:46px; height:46px; border-radius:50%; background:rgba(0,0,0,0.7); color:#fff; border:none; font-size:22px; display:flex; align-items:center; justify-content:center; }
+.viewer-back { left:14px; } .viewer-fav { right:14px; font-size:20px; }
+.custom-video-controls { position:absolute; bottom:100px; left:50%; transform:translateX(-50%); background:rgba(30,30,30,0.95); backdrop-filter:blur(10px); border-radius:16px; padding:8px 12px; display:none; flex-direction:column; z-index:50; box-shadow:0 8px 30px rgba(0,0,0,0.8); border:1px solid rgba(255,255,255,0.15); width:90%; max-width:400px; touch-action:none; }
+.custom-video-controls.show { display:flex; }
+.drag-handle { text-align:center; color:#777; font-size:16px; padding:2px 0 4px; line-height:1; touch-action:none; }
+.controls-row { display:flex; align-items:center; gap:10px; padding-top:4px; }
+.controls-row button { background:none; border:none; font-size:20px; color:#fff; padding:0; display:flex; }
+.controls-row span { font-size:11px; color:#aaa; min-width:30px; text-align:center; font-family:monospace; }
+.controls-row input[type=range] { flex:1; -webkit-appearance:none; height:6px; background:rgba(255,255,255,0.2); border-radius:3px; outline:none; touch-action:none; }
+.controls-row input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 0 5px rgba(0,0,0,0.5); }
+.media-toolbar { position:absolute; bottom:calc(20px + env(safe-area-inset-bottom, 0px)); left:12px; max-width:calc(100vw - 24px); background:#1c1c1e; border-radius:30px; padding:5px; display:none; align-items:center; z-index:30; border:1px solid rgba(255,255,255,0.1); box-shadow:0 8px 30px rgba(0,0,0,0.6); }
+.media-toolbar.show { animation:tbIn .4s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes tbIn { from { opacity:0; transform:translateX(-30px) scale(.85); } to { opacity:1; transform:translateX(0) scale(1); } }
+.tb-handle { width:40px; height:40px; border-radius:50%; flex-shrink:0; background:rgba(255,255,255,0.12); border:none; color:#fff; font-size:16px; display:flex; align-items:center; justify-content:center; transition:transform .3s, background .2s; }
+.tb-handle:active { transform:scale(0.85); background:rgba(255,255,255,0.25); }
+.tb-tools { display:flex; align-items:center; gap:2px; overflow-x:auto; overflow-y:hidden; scrollbar-width:none; touch-action:pan-x; max-width:calc(100vw - 96px); margin-left:6px; opacity:1; transition:max-width .4s cubic-bezier(.4,0,.2,1), opacity .25s, margin .4s cubic-bezier(.4,0,.2,1); }
+.tl { position:absolute; inset:0; overflow:hidden; line-height:1; z-index:3; -webkit-user-select:text; user-select:text; }
+.tl span { position:absolute; white-space:pre; color:transparent; transform-origin:0 0; -webkit-user-select:text; user-select:text; }
+.tl ::selection { background:rgba(66,133,244,0.4); }
+body.drawing .tl { pointer-events:none; -webkit-user-select:none; user-select:none; }
+#cropBox { position:absolute; display:none; border:2px solid rgba(255,255,255,0.95); border-radius:12px; box-shadow:0 0 0 9999px rgba(0,0,0,0.5), 0 0 22px rgba(138,180,255,0.55); pointer-events:none; z-index:12; animation:cropIn .25s ease-out; }
+@keyframes cropIn { from { opacity:0; } to { opacity:1; } }
+#cropBox i { position:absolute; width:20px; height:20px; border:4px solid #8ab4ff; }
+#cropBox i.tl { left:-4px; top:-4px; border-right:none; border-bottom:none; border-top-left-radius:12px; }
+#cropBox i.tr { right:-4px; top:-4px; border-left:none; border-bottom:none; border-top-right-radius:12px; }
+#cropBox i.bl { left:-4px; bottom:-4px; border-right:none; border-top:none; border-bottom-left-radius:12px; }
+#cropBox i.br { right:-4px; bottom:-4px; border-left:none; border-top:none; border-bottom-right-radius:12px; }
+#cropBar { position:absolute; z-index:40; display:none; gap:2px; padding:5px; background:rgba(28,28,30,0.96); border:1px solid rgba(255,255,255,0.15); border-radius:26px; box-shadow:0 8px 28px rgba(0,0,0,0.6); transform:translateX(-50%); }
+#cropBar.show { display:flex; animation:barIn .22s cubic-bezier(.2,.9,.3,1.2); }
+@keyframes barIn { from { opacity:0; transform:translateX(-50%) translateY(8px) scale(.9); } to { opacity:1; transform:translateX(-50%) translateY(0) scale(1); } }
+#cropBar button { background:transparent; border:none; color:#fff; font-size:11.5px; font-weight:600; display:flex; align-items:center; gap:3px; padding:8px 5px; border-radius:20px; white-space:nowrap; }
+#cropBar button:active { background:rgba(255,255,255,0.18); }
+.tb-tools::-webkit-scrollbar { display:none; }
+.tb-pg { flex-shrink:0; min-width:30px; height:26px; padding:0 8px; margin:0 2px 0 4px; border-radius:13px; background:rgba(255,255,255,0.16); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.media-toolbar.collapsed .tb-tools { max-width:0; opacity:0; margin-left:0; pointer-events:none; }
+.media-toolbar.show { display:flex; }
+.tool-btn { background:transparent; border:none; color:#888; font-size:20px; transition:transform .15s, background .15s; padding:6px; width:36px; height:36px; flex-shrink:0; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.tool-btn:active { transform:scale(0.85); }
+.tool-btn.active { background:rgba(255,255,255,0.18); }
+.custom-scroller { position:absolute; right:6px; top:84px; bottom:96px; width:36px; z-index:20; opacity:0; pointer-events:none; transition:opacity .35s; }
+.custom-scroller.show { opacity:1; pointer-events:auto; transition:opacity .15s; }
+.scroll-track { width:100%; height:100%; position:relative; }
+.scroll-pill { position:absolute; right:0; top:0; width:34px; height:46px; border-radius:12px; background:rgba(40,40,44,0.92); border:1px solid rgba(255,255,255,0.18); display:flex; align-items:center; justify-content:center; touch-action:none; box-shadow:0 2px 8px rgba(0,0,0,0.5); }
+.scroll-pill:active { background:rgba(70,70,76,0.95); }
+.scroll-pill svg { width:20px; height:28px; fill:none; stroke:#fff; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
+#pgBadge { position:absolute; right:42px; top:10px; background:rgba(30,30,32,0.92); color:#fff; font-size:12px; font-weight:700; padding:5px 10px; border-radius:14px; white-space:nowrap; border:1px solid rgba(255,255,255,0.15); }
+.pen-settings { position:absolute; bottom:90px; left:50%; transform:translateX(-50%); background:#1c1c1e; padding:16px; border-radius:20px; display:none; flex-direction:column; gap:16px; z-index:31; border:1px solid rgba(255,255,255,0.1); box-shadow:0 10px 40px rgba(0,0,0,0.8); width:280px; }
+.pen-settings.show { display:flex; }
+.setting-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.setting-row span { font-size:13px; color:#aaa; width:70px; }
+.setting-row input[type=range] { flex:1; -webkit-appearance:none; background:transparent; height:24px; touch-action:none; }
+.setting-row input[type=range]::-webkit-slider-runnable-track { width:100%; height:4px; background:#3a3a3c; border-radius:2px; }
+.setting-row input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; height:20px; width:20px; border-radius:50%; background:#fff; margin-top:-8px; box-shadow:0 2px 6px rgba(0,0,0,0.5); }
+.color-picker { width:40px; height:40px; border:none; border-radius:50%; overflow:hidden; padding:0; background:none; }
+.color-picker::-webkit-color-swatch-wrapper { padding:0; }
+.color-picker::-webkit-color-swatch { border:2px solid #fff; border-radius:50%; }
+.close-settings-btn { position:absolute; top:8px; right:8px; background:transparent; border:none; color:#888; font-size:16px; padding:5px; }
+.toast { position:fixed; bottom:100px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(255,255,255,0.95); color:#000; padding:13px 22px; border-radius:100px; font-size:14px; font-weight:600; z-index:200; opacity:0; pointer-events:none; transition:all .32s; white-space:nowrap; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.hidden-file { position:absolute; width:1px; height:1px; opacity:0; z-index:-1; pointer-events:none; top:0; left:0; }
+.spinner { width:24px; height:24px; border:2.5px solid rgba(255,255,255,0.2); border-top-color:#000; border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+#cpStage { position:fixed; left:0; top:0; width:2px; height:2px; overflow:hidden; opacity:0.01; z-index:-1; user-select:text; -webkit-user-select:text; }
+#cpStage img { display:block; max-width:none; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="bg"></div>
+  <div id="homeScreen" class="screen">
+    <div class="content">
+      <div class="top-stick-figure">
+        <svg class="stick-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <rect x="80" y="140" width="40" height="6" rx="2" fill="#fff"/>
+          <line x1="85" y1="146" x2="82" y2="188" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="115" y1="146" x2="118" y2="188" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="84" y1="172" x2="116" y2="172" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+          <line x1="100" y1="140" x2="88" y2="140" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <line x1="88" y1="140" x2="82" y2="178" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <line x1="100" y1="140" x2="112" y2="140" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <line x1="112" y1="140" x2="118" y2="178" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <line x1="100" y1="140" x2="100" y2="95" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <path d="M 100 110 Q 92 122 89 134" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M 100 110 Q 130 100 155 88" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <ellipse cx="160" cy="85" rx="9" ry="5" fill="#fff"/>
+          <line x1="166" y1="82" x2="170" y2="80" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          <line x1="168" y1="86" x2="172" y2="86" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="100" cy="68" r="22" stroke="#fff" stroke-width="3" fill="none"/>
+          <path d="M 88 52 Q 95 41 100 48 Q 106 40 113 50" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <circle cx="92" cy="66" r="2.3" fill="#fff"/><circle cx="108" cy="66" r="2.3" fill="#fff"/>
+          <path d="M 92 76 Q 100 82 108 76" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div class="palm-wrapper"><div class="palm-number" id="palmNumber">0</div></div>
+      </div>
+      <div class="header">
+        <div class="header-icon">📚</div>
+        <div class="header-text"><div class="header-title">Kitabxanam</div><div class="header-sub" id="homeSub">0 bölmə</div></div>
+      </div>
+      <div class="favorites-btn" id="openFavoritesBtn"><span class="star-icon">⭐</span><span>Sevimlilər</span><span class="fav-count" id="favCountBadge">0</span></div>
+      <div class="shelf-area" style="margin-top:20px;"><div class="shelf-row" id="shelfRow"></div><div class="shelf-plank"></div></div>
+    </div>
+    <button class="fab" id="addFolderBtn"><span style="font-size:20px;">＋</span> Yeni bölmə</button>
+  </div>
+
+  <div id="folderScreen" class="screen hidden">
+    <div class="folder-header">
+      <button class="back-btn" id="folderBackBtn">←</button>
+      <div style="flex:1; min-width:0;"><div class="folder-title" id="folderTitle">Bölmə</div><div class="folder-subtitle" id="folderSubtitle">0 element</div></div>
+      <button class="back-btn" id="sortBtn" style="font-size:18px;">⇅</button>
+      <button class="back-btn" id="renameAllBtn" style="font-size:17px;" title="Adları dəyiş">🔤</button>
+      <button class="back-btn" id="changeCoverBtn">🖼️</button>
+    </div>
+    <div class="content" id="folderContent" style="padding:0;"></div>
+    <button class="fab round" id="addMediaBtn">＋</button>
+  </div>
+
+  <div id="viewerScreen" class="screen hidden viewer">
+    <button class="viewer-back" id="viewerBackBtn">←</button>
+    <button class="viewer-fav" id="viewerFavBtn">⭐</button>
+    <div class="custom-video-controls" id="customVideoControls">
+      <div class="drag-handle" id="dragHandle">⋮⋮</div>
+      <div class="controls-row">
+        <button id="customPlayBtn">▶️</button><span id="customCurrentTime">0:00</span>
+        <input type="range" id="customSeekBar" min="0" max="100" step="0.1" value="0">
+        <span id="customTotalTime">0:00</span>
+      </div>
+    </div>
+    <div class="custom-scroller" id="customScroller"><div class="scroll-track" id="scrollTrack"><span id="pgBadge"></span><div class="scroll-pill" id="scrollPill"><svg viewBox="0 0 20 28"><path d="M4 10l6-6 6 6M4 18l6 6 6-6"/></svg></div></div></div>
+    <div class="pen-settings" id="penSettings">
+      <button class="close-settings-btn" id="closeSettingsBtn">✖</button>
+      <div class="setting-row" style="margin-top:8px;"><span>Rəng</span><input type="color" id="colorPicker" class="color-picker" value="#ff0000"></div>
+      <div class="setting-row"><span>Qalınlıq</span><input type="range" id="sizeSlider" min="1" max="50" value="5"></div>
+      <div class="setting-row"><span>Şəffaflıq</span><input type="range" id="opacitySlider" min="0.1" max="1" step="0.1" value="1"></div>
+    </div>
+    <div class="media-toolbar" id="mediaToolbar">
+      <button class="tb-handle" id="tbHandle">❮</button>
+      <div class="tb-tools">
+        <button class="tool-btn active" id="panBtn">✋</button><button class="tool-btn" id="penBtn">✏️</button>
+        <button class="tool-btn" id="markerBtn">🖍️</button><button class="tool-btn" id="eraserBtn">🧽</button><button class="tool-btn" id="cropBtn">✂️</button>
+        <div style="width:1px;height:20px;background:rgba(255,255,255,0.2);margin:0 4px;flex-shrink:0;"></div>
+        <button class="tool-btn" id="undoBtn">↩️</button><button class="tool-btn" id="redoBtn">↪️</button>
+        <button class="tool-btn" id="nativeBtn" style="display:none">↗</button>
+        <div style="width:1px;height:20px;background:rgba(255,255,255,0.2);margin:0 4px;flex-shrink:0;"></div>
+        <span class="tb-pg" id="tbPg">1</span><button class="tool-btn" id="copyBtn">📋</button><button class="tool-btn" id="saveBtn">🖼️</button>
+      </div>
+    </div>
+    <div class="viewer-content" id="viewerContent"><div class="zoomable-wrapper" id="zoomableWrapper"></div><div id="cropBox"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div></div>
+    <div id="cropBar"><button id="cbSave">🖼️ Saxla</button><button id="cbSize">📏 Kiçik</button><button id="cbCopy">📋 Şəkil</button><button id="cbShare">📤 Paylaş</button><button id="cbText">🔤 Mətn</button><button id="cbClose">✕</button></div>
+  </div>
+
+  <div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalBox"></div></div>
+  <div class="toast" id="toast"></div>
+  <input type="file" id="fileInput" class="hidden-file" accept="image/*,video/*,application/pdf" multiple>
+  <input type="file" id="coverInput" class="hidden-file" accept="image/*">
+</div>
+<script>
+/* ================= IndexedDB (köhnə məlumatlar qorunur; yalnız 'ann' anbarı əlavə olunub) ================= */
+const DB_NAME='kitabxana_v33', DB_VERSION=2; let dbPromise=null;
+function openDB(){
+  if(dbPromise) return dbPromise;
+  dbPromise=new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=e=>{const db=e.target.result;
+      if(!db.objectStoreNames.contains('folders')) db.createObjectStore('folders',{keyPath:'id'});
+      if(!db.objectStoreNames.contains('media')){const s=db.createObjectStore('media',{keyPath:'id'});s.createIndex('folderId','folderId');s.createIndex('isFavorite','isFavorite');}
+      if(!db.objectStoreNames.contains('ann')) db.createObjectStore('ann',{keyPath:'id'});};
+    req.onsuccess=()=>resolve(req.result); req.onerror=()=>reject(req.error);});
+  return dbPromise;
+}
+async function dbReq(store,mode,fn){const db=await openDB();return new Promise((res,rej)=>{const tx=db.transaction(store,mode);const r=fn(tx.objectStore(store));tx.oncomplete=()=>res(r&&r.result);tx.onerror=()=>rej(tx.error);});}
+const dbGetAllFolders=()=>dbReq('folders','readonly',o=>o.getAll());
+const dbGetFolder=id=>dbReq('folders','readonly',o=>o.get(id));
+const dbAddFolder=f=>dbReq('folders','readwrite',o=>o.add(f));
+const dbUpdateFolder=f=>dbReq('folders','readwrite',o=>o.put(f));
+async function dbDeleteFolder(id){const db=await openDB();const tx=db.transaction(['folders','media','ann'],'readwrite');
+  tx.objectStore('folders').delete(id);
+  tx.objectStore('media').index('folderId').openCursor(IDBKeyRange.only(id)).onsuccess=e=>{const c=e.target.result;if(c){tx.objectStore('ann').delete(c.value.id);tx.objectStore('ann').delete('pos:'+c.value.id);localStorage.removeItem('pos:'+c.value.id);c.delete();c.continue();}};
+  return new Promise((res,rej)=>{tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});}
+const dbGetMedia=fid=>dbReq('media','readonly',o=>o.index('folderId').getAll(IDBKeyRange.only(fid)));
+async function dbGetFavorites(){return (await dbReq('media','readonly',o=>o.getAll())).filter(m=>m.isFavorite===true);}
+const dbAddMedia=m=>dbReq('media','readwrite',o=>o.add(m));
+const dbUpdateMedia=m=>dbReq('media','readwrite',o=>o.put(m));
+async function dbDeleteMedia(id){await dbReq('media','readwrite',o=>o.delete(id));await dbReq('ann','readwrite',o=>o.delete(id));await dbReq('ann','readwrite',o=>o.delete('pos:'+id));localStorage.removeItem('pos:'+id);}
+const dbCountMedia=fid=>dbReq('media','readonly',o=>o.index('folderId').count(IDBKeyRange.only(fid)));
+const dbGetAnn=async id=>{const r=await dbReq('ann','readonly',o=>o.get(id));return r?r.strokes:[];};
+const dbPutAnn=(id,strokes)=>dbReq('ann','readwrite',o=>o.put({id,strokes}));
+
+const SORT_IDS=['date_desc','date_asc','name_asc','name_desc','size_desc','size_asc'];
+const getSortFor=id=>{try{const v=localStorage.getItem('sort:'+id);return SORT_IDS.includes(v)?v:'date_desc';}catch(e){return 'date_desc';}};
+const setSortFor=(id,v)=>{try{localStorage.setItem('sort:'+id,v);}catch(e){}};
+const state={folders:[],folderCounts:{},currentFolder:null,currentMediaList:[],currentSort:'date_desc',blobUrls:[],coverUrls:{},prevTotalCount:0};
+let coverTargetId=null;
+const $=s=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const revokeBlobUrls=()=>{state.blobUrls.forEach(u=>URL.revokeObjectURL(u));state.blobUrls=[];};
+const revokeCovers=()=>{Object.values(state.coverUrls).forEach(u=>URL.revokeObjectURL(u));state.coverUrls={};};
+const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);}
+function showModal(html,center=false){const o=$('#modalOverlay');o.classList.toggle('center',center);$('#modalBox').innerHTML=html;o.classList.add('active');}
+function hideModal(){$('#modalOverlay').classList.remove('active');$('#modalBox').style.maxWidth='';if(window._mc){const f=window._mc;window._mc=null;f();}}
+function attachLongPress(el,cb){let timer=null,trig=false;
+  const start=()=>{trig=false;timer=setTimeout(()=>{trig=true;if(navigator.vibrate)navigator.vibrate(30);cb();},550);};
+  const cancel=()=>clearTimeout(timer);
+  el.addEventListener('touchstart',start,{passive:true});['touchend','touchmove','touchcancel','mouseup','mouseleave'].forEach(n=>el.addEventListener(n,cancel));
+  el.addEventListener('mousedown',start);el.addEventListener('contextmenu',e=>e.preventDefault());
+  el.addEventListener('click',e=>{if(trig){e.stopPropagation();e.preventDefault();trig=false;}},true);}
+const getFolderName=id=>{const f=state.folders.find(f=>f.id===id);return f?f.name:'Naməlum Bölmə';};
+
+/* ================= Naviqasiya: hər addım history-yə yazılır, geri düyməsi bir pillə geri qaytarır ================= */
+history.replaceState({screen:'home'},'');
+/* Geri düyməsi ana ekranda basılanda: çıxmaq istəyirsiniz? */
+window.__askExit=function(){const o=$('#modalOverlay');if(o.classList.contains('active')){hideModal();return;}
+  showModal(`<div class="modal-title">Tətbiqdən çıxmaq istəyirsiniz?</div><div class="modal-actions"><button class="btn" id="exNo">Xeyr</button><button class="btn primary" id="exYes">Bəli, çıx</button></div>`,true);
+  $('#exNo').onclick=hideModal;$('#exYes').onclick=()=>{hideModal();try{Android.exitApp();}catch(e){}};};
+window.addEventListener('popstate',()=>{
+  if(!$('#viewerScreen').classList.contains('hidden')) closeViewer();
+  else if(!$('#folderScreen').classList.contains('hidden')) closeFolder();
+});
+
+/* ================= Thumbnail-lar ================= */
+function imageThumb(file){return new Promise(res=>{const u=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{const w=320,c=document.createElement('canvas');c.width=w;c.height=Math.round(w*im.naturalHeight/im.naturalWidth)||w;
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height);const d=c.toDataURL('image/jpeg',.6);c.width=0;URL.revokeObjectURL(u);res(d);};
+  im.onerror=()=>{URL.revokeObjectURL(u);res(null);};im.src=u;});}
+// Video: ilk saniyədən (və ya ortadan) avtomatik üz qabığı
+function generateVideoThumbnail(file){return new Promise(res=>{
+  const v=document.createElement('video'),u=URL.createObjectURL(file);let done=false,tries=0,best=null,timer=0;
+  v.muted=true;v.defaultMuted=true;v.playsInline=true;v.preload='auto';v.setAttribute('muted','');v.setAttribute('playsinline','');
+  v.style.cssText='position:fixed;left:0;top:0;width:4px;height:4px;opacity:.01;pointer-events:none;z-index:-1';
+  document.body.appendChild(v);
+  const fin=d=>{if(done)return;done=true;clearTimeout(timer);try{v.pause();}catch(e){}v.removeAttribute('src');try{v.load();}catch(e){}v.remove();URL.revokeObjectURL(u);res(d);};
+  const grab=()=>{if(!v.videoWidth)return null;try{const w=320,c=document.createElement('canvas');c.width=w;c.height=Math.round(w*v.videoHeight/v.videoWidth)||180;
+    const x=c.getContext('2d');x.drawImage(v,0,0,c.width,c.height);const d=x.getImageData(0,0,c.width,c.height).data;let sum=0,n=0;
+    for(let k=0;k<d.length;k+=16){sum+=d[k]+d[k+1]+d[k+2];n+=3;}return{url:c.toDataURL('image/jpeg',.6),avg:sum/n};}catch(e){return null;}};
+  const attempt=()=>{const dur=v.duration&&isFinite(v.duration)?v.duration:2,fr=[.1,.3,.5,.02][tries++];
+    if(fr===undefined){fin(best?best.url:null);return;}
+    try{v.currentTime=Math.min(Math.max(.05,dur*fr),Math.max(.05,dur-.1));}catch(e){fin(best?best.url:null);}};
+  v.addEventListener('seeked',()=>setTimeout(()=>{if(done)return;const g=grab();if(g){if(!best||g.avg>best.avg)best=g;if(g.avg>18){fin(g.url);return;}}attempt();},200));
+  v.addEventListener('loadeddata',()=>attempt(),{once:true});
+  v.onerror=()=>fin(best?best.url:null);
+  timer=setTimeout(()=>fin(best?best.url:null),12000);
+  setTimeout(()=>{if(!done&&!best){v.play().then(()=>setTimeout(()=>{const g=grab();fin(g?g.url:null);},500)).catch(()=>{});}},6000);
+  v.src=u;});}
+/* köhnə videoların üz qabığı yoxdursa, arxa planda yaradılır */
+let _vtBusy=false;const _vtTried=new Set();const _origRenderFolder=renderFolder;
+async function fixVideoThumbs(){if(_vtBusy)return;_vtBusy=true;try{let changed=false;
+  for(const m of (state.currentMediaList||[])){if(m.type!=='video'||m.thumbnail||!m.blob||_vtTried.has(m.id))continue;_vtTried.add(m.id);
+    try{const t=await generateVideoThumbnail(m.blob);if(t){m.thumbnail=t;await dbUpdateMedia(m);changed=true;}}catch(e){}}
+  if(changed&&state.currentFolder)await _origRenderFolder();}finally{_vtBusy=false;}}
+renderFolder=async function(){await _origRenderFolder();fixVideoThumbs();};
+
+/* ================= Ana səhifə (rəf) ================= */
+async function loadHome(){
+  state.folders=await dbGetAllFolders();state.folders.sort((a,b)=>b.createdAt-a.createdAt);
+  const counts=await Promise.all(state.folders.map(f=>dbCountMedia(f.id)));
+  state.folderCounts={};state.folders.forEach((f,i)=>state.folderCounts[f.id]=counts[i]);
+  renderShelf();$('#palmNumber').textContent=state.folders.length;
+  const total=state.folders.reduce((s,f)=>s+(state.folderCounts[f.id]||0),0);
+  $('#homeSub').textContent=`${state.folders.length} bölmə • ${total} element`;
+  $('#favCountBadge').textContent=(await dbGetFavorites()).length;
+}
+function renderShelf(){
+  const row=$('#shelfRow');revokeCovers();row.innerHTML='';
+  if(!state.folders.length){row.innerHTML='<div class="shelf-empty">Rəf boşdur • aşağıdakı düymə ilə<br>ilk bölməni yarat</div>';return;}
+  const grads=['linear-gradient(145deg,#2c2c2c,#0d0d0d)','linear-gradient(160deg,#1e1e1e,#050505)','linear-gradient(120deg,#333 0%,#0a0a0a 100%)','linear-gradient(155deg,#262626,#080808)'];
+  state.folders.forEach((folder,i)=>{
+    const book=document.createElement('div');book.className='book';book.style.setProperty('--i',i);
+    if(folder.coverBlob){const url=URL.createObjectURL(folder.coverBlob);state.coverUrls[folder.id]=url;book.style.backgroundImage=`url("${url}")`;}
+    else{book.style.background=grads[i%grads.length];const ic=document.createElement('div');ic.className='book-default-icon';ic.textContent='📖';book.appendChild(ic);}
+    const count=state.folderCounts[folder.id]||0;
+    book.insertAdjacentHTML('beforeend',`<div class="book-gradient"></div><div class="book-count-badge">${count}</div><div class="book-content"><div class="book-name">${escapeHtml(folder.name)}</div><div class="book-count">${count===0?'boş':count+' element'}</div></div>`);
+    book.addEventListener('click',()=>openFolder(folder));
+    attachLongPress(book,()=>showBookMenu(folder));row.appendChild(book);});
+}
+$('#openFavoritesBtn').addEventListener('click',()=>openFolder({id:'favorites',name:'Sevimlilər',isSpecial:true}));
+
+function showBookMenu(folder){
+  const hasCover=!!folder.coverBlob;const b='padding:14px;text-align:left;background:rgba(255,255,255,0.08);color:#fff;';
+  showModal(`<div class="modal-title">${escapeHtml(folder.name)}</div>
+    <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:16px;">${state.folderCounts[folder.id]||0} element</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <button class="btn" id="menuOpen" style="${b}">📂 Bölməni aç</button>
+      <button class="btn" id="menuRename" style="${b}">✏️ Adını dəyiş</button>
+      <button class="btn" id="menuCover" style="${b}">🖼️ ${hasCover?'Üz qabığını dəyiş':'Üz qabığı şəkli əlavə et'}</button>
+      ${hasCover?`<button class="btn" id="menuRemoveCover" style="${b}">✖️ Üz qabığını sil</button>`:''}
+      <button class="btn danger" id="menuDelete" style="padding:14px;text-align:left;background:rgba(255,90,90,0.08);">🗑️ Bölməni sil</button>
+    </div><div class="modal-actions"><button class="btn" id="menuCancel">Bağla</button></div>`);
+  $('#menuCancel').onclick=hideModal;
+  $('#menuOpen').onclick=()=>{hideModal();openFolder(folder);};
+  $('#menuRename').onclick=()=>{hideModal();setTimeout(()=>askName('Adı dəyiş',folder.name,async n=>{folder.name=n;await dbUpdateFolder(folder);await loadHome();showToast('Ad dəyişdirildi ✓');}),300);};
+  $('#menuCover').onclick=()=>{hideModal();coverTargetId=folder.id;const i=$('#coverInput');i.value='';i.click();};
+  const rm=$('#menuRemoveCover');if(rm)rm.onclick=async()=>{hideModal();folder.coverBlob=null;await dbUpdateFolder(folder);await loadHome();showToast('Üz qabığı silindi');};
+  $('#menuDelete').onclick=()=>{hideModal();confirmDeleteFolder(folder);};
+}
+function askName(title,val,onOk,ph=''){
+  showModal(`<div class="modal-title">${title}</div><input type="text" class="modal-input" id="nameInput" placeholder="${ph}" value="${escapeHtml(val||'')}"><div class="modal-actions"><button class="btn" id="mCancel">Ləğv et</button><button class="btn primary" id="mOk">Yadda saxla</button></div>`,true);
+  const inp=$('#nameInput');setTimeout(()=>inp.focus(),100);$('#mCancel').onclick=hideModal;
+  const ok=()=>{const n=inp.value.trim();if(!n)return;hideModal();onOk(n);};
+  $('#mOk').onclick=ok;inp.addEventListener('keydown',e=>{if(e.key==='Enter')ok();});
+}
+$('#coverInput').addEventListener('change',async e=>{
+  const file=e.target.files&&e.target.files[0];if(!file||!coverTargetId)return;
+  try{const f=await dbGetFolder(coverTargetId);if(!f)return;f.coverBlob=file;await dbUpdateFolder(f);
+    if(state.currentFolder&&state.currentFolder.id===f.id)state.currentFolder.coverBlob=file;await loadHome();showToast('Üz qabığı yeniləndi ✓');}
+  catch(err){showToast('Xəta baş verdi');}finally{coverTargetId=null;}
+});
+$('#addFolderBtn').addEventListener('click',()=>askName('Yeni bölmə','',async n=>{await dbAddFolder({id:'f_'+Date.now(),name:n,createdAt:Date.now()});await loadHome();showToast('Bölmə yaradıldı ✓');},'Bölmənin adı (məs: Riyaziyyat)'));
+function confirmDeleteFolder(folder){
+  showModal(`<div class="modal-title">Bölməni sil?</div><div style="color:rgba(255,255,255,0.7);font-size:14px;line-height:1.5;"><b>"${escapeHtml(folder.name)}"</b> bölməsi və içindəki bütün elementlər silinəcək.</div><div class="modal-actions"><button class="btn" id="mCancel">Xeyr</button><button class="btn danger" id="mOk">Sil</button></div>`,true);
+  $('#mCancel').onclick=hideModal;$('#mOk').onclick=async()=>{hideModal();await dbDeleteFolder(folder.id);await loadHome();showToast('Bölmə silindi');};
+}
+
+/* ================= Bölmə ekranı ================= */
+async function openFolder(folder){
+  state.currentFolder=folder;$('#folderTitle').textContent=folder.name;
+  const isFav=folder.id==='favorites';$('#addMediaBtn').style.display=isFav?'none':'flex';$('#changeCoverBtn').style.display=isFav?'none':'flex';
+  const home=$('#homeScreen'),fs=$('#folderScreen');
+  fs.classList.remove('hidden');fs.classList.add('slide-in-right');home.classList.add('slide-out-left');
+  history.pushState({screen:'folder'},'');await renderFolder();
+  setTimeout(()=>{home.classList.add('hidden');fs.classList.remove('slide-in-right');},420);
+}
+async function closeFolder(){
+  const home=$('#homeScreen'),fs=$('#folderScreen');
+  fs.classList.add('slide-out-right');home.classList.remove('hidden','slide-out-left');home.classList.add('slide-in-left');
+  setTimeout(async()=>{fs.classList.add('hidden');fs.classList.remove('slide-out-right');home.classList.remove('slide-in-left');
+    revokeBlobUrls();state.currentFolder=null;await loadHome();},420);
+}
+$('#folderBackBtn').addEventListener('click',()=>history.back());
+$('#changeCoverBtn').addEventListener('click',()=>{if(!state.currentFolder||state.currentFolder.id==='favorites')return;coverTargetId=state.currentFolder.id;const i=$('#coverInput');i.value='';i.click();});
+$('#sortBtn').addEventListener('click',()=>{
+  if(state.currentFolder)state.currentSort=getSortFor(state.currentFolder.id);
+  const sorts=[['date_desc','Ən yenidən köhnəyə (Tarix)'],['date_asc','Ən köhnədən yeniyə (Tarix)'],['name_asc','Ad sırası (A-Z / 1-9)'],['name_desc','Ad sırası (Z-A / 9-1)'],['size_desc','Ölçü (Böyükdən kiçiyə)'],['size_asc','Ölçü (Kiçikdən böyüyə)']];
+  showModal(`<div class="modal-title">Sıralama seçin</div><div class="sort-list">${sorts.map(([id,l])=>`<div class="sort-item ${state.currentSort===id?'active':''}" data-sort="${id}"><span>${l}</span><span class="sort-check">✓</span></div>`).join('')}</div><div class="modal-actions"><button class="btn" onclick="hideModal()">Bağla</button></div>`);
+  document.querySelectorAll('.sort-item').forEach(el=>el.onclick=()=>{state.currentSort=el.dataset.sort;if(state.currentFolder)setSortFor(state.currentFolder.id,state.currentSort);hideModal();renderFolder();});
+});
+function sortMediaList(media){if(state.currentFolder)state.currentSort=getSortFor(state.currentFolder.id);const list=[...media],s=state.currentSort,col=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});
+  list.sort((a,b)=>{if(s==='date_desc')return b.createdAt-a.createdAt;if(s==='date_asc')return a.createdAt-b.createdAt;
+    if(s==='name_asc')return col.compare(a.name||'',b.name||'');if(s==='name_desc')return col.compare(b.name||'',a.name||'');
+    if(s==='size_desc')return(b.size||0)-(a.size||0);return(a.size||0)-(b.size||0);});return list;}
+
+async function renderFolder(){
+  if(!state.currentFolder)return;const isFav=state.currentFolder.id==='favorites';
+  const media=sortMediaList(isFav?await dbGetFavorites():await dbGetMedia(state.currentFolder.id));
+  state.currentMediaList=media;$('#folderSubtitle').textContent=`${media.length} element`;
+  const content=$('#folderContent');revokeBlobUrls();
+  if(!media.length){content.innerHTML=`<div class="empty"><div class="empty-icon">${isFav?'⭐':'🖼️'}</div><div class="empty-title">${isFav?'Sevimli fayl yoxdur':'Bölmə boşdur'}</div><div class="empty-sub">${isFav?'Hər hansı fayla uzun basıb<br>sevimlilərə əlavə et':'＋ düyməsi ilə foto/video/PDF əlavə et'}</div></div>`;return;}
+  content.innerHTML='<div class="media-grid" id="mediaGrid"></div>';const grid=$('#mediaGrid');
+  media.forEach((m,i)=>{
+    const tile=document.createElement('div');tile.className='media-tile';tile.style.animationDelay=`${Math.min(i,20)*25}ms`;
+    if(m.type==='video')tile.innerHTML=m.thumbnail?`<img src="${m.thumbnail}" alt=""><div class="video-play-icon">▶</div><div class="video-badge">VİDEO</div>`:`<div class="pdf-tile-placeholder"><div class="pdf-icon">🎬</div><div class="video-badge">VİDEO</div></div>`;
+    else if(m.type==='pdf')tile.innerHTML=m.thumbnail?`<img src="${m.thumbnail}" alt=""><div class="pdf-badge">PDF</div>`:`<div class="pdf-tile-placeholder"><div class="pdf-icon">📄</div><div class="pdf-badge">PDF</div></div>`;
+    else{let src=m.thumbnail;if(!src){src=URL.createObjectURL(m.blob);state.blobUrls.push(src);}tile.innerHTML=`<img src="${src}" alt="">`;}
+    if(m.isFavorite)tile.insertAdjacentHTML('beforeend','<div class="fav-badge">⭐</div>');
+    tile.insertAdjacentHTML('beforeend',`<div class="media-name-overlay"><div class="media-name-text">${escapeHtml(m.name||'Adsız')}</div>${isFav?`<div class="media-folder-text">📁 ${escapeHtml(getFolderName(m.folderId))}</div>`:''}</div>`);
+    tile.addEventListener('click',()=>openViewer(m));attachLongPress(tile,()=>showMediaMenu(m));grid.appendChild(tile);});
+}
+function showMediaMenu(media){
+  const isFav=media.isFavorite===true,b='padding:14px;text-align:left;background:rgba(255,255,255,0.08);color:#fff;';
+  showModal(`<div class="modal-title">${escapeHtml(media.name||'Fayl')}</div>
+    <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-bottom:16px;">📁 Bölmə: <b>${escapeHtml(getFolderName(media.folderId))}</b></div>
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <button class="btn" id="menuFav" style="${b}color:${isFav?'#ffd700':'#fff'};">${isFav?'⭐ Sevimlilərdən çıxar':'⭐ Sevimlilərə əlavə et'}</button>
+      <button class="btn" id="menuRename" style="${b}">✏️ Adını dəyiş</button>
+      <button class="btn danger" id="menuDelete" style="padding:14px;text-align:left;background:rgba(255,90,90,0.08);">🗑️ Tamamilə sil</button>
+    </div><div class="modal-actions"><button class="btn" id="menuCancel">Bağla</button></div>`);
+  $('#menuCancel').onclick=hideModal;
+  $('#menuFav').onclick=async()=>{hideModal();media.isFavorite=!isFav;await dbUpdateMedia(media);await renderFolder();showToast(media.isFavorite?'Sevimlilərə əlavə edildi ⭐':'Sevimlilərdən çıxarıldı');};
+  $('#menuRename').onclick=()=>{hideModal();setTimeout(()=>askName('Adı dəyiş',media.name,async n=>{media.name=n;await dbUpdateMedia(media);await renderFolder();showToast('Ad dəyişdirildi ✓');}),300);};
+  $('#menuDelete').onclick=async()=>{hideModal();await dbDeleteMedia(media.id);await renderFolder();showToast('Silindi');};
+}
+const fileInput=$('#fileInput');
+$('#addMediaBtn').addEventListener('click',()=>{if(!state.currentFolder||state.currentFolder.id==='favorites')return;fileInput.value='';fileInput.click();});
+
+/* ---- Adlandırma ayarı + toplu ad dəyişmə ---- */
+const baseName=n=>String(n||'').replace(/\.[^.\/]+$/,'').trim();
+const NS_L={ask:'Hər dəfə seç (fayl-fayl)',num:'Həmişə rəqəmlə (1, 2, 3…)',orig:'Həmişə faylın öz adı ilə'};
+const getNameSetting=()=>{try{const v=localStorage.getItem('nameSetting');return NS_L[v]?v:'num';}catch(e){return 'num';}};
+const setNameSetting=v=>{try{localStorage.setItem('nameSetting',v);}catch(e){}};
+$('#renameAllBtn').addEventListener('click',async()=>{
+  const inFolder=state.currentFolder&&state.currentFolder.id!=='favorites';
+  const list=inFolder?await dbGetMedia(state.currentFolder.id):[],withOrig=list.filter(m=>baseName(m.origName)).length,cur=getNameSetting();
+  const nb=k=>`<button class="btn ${cur===k?'primary':''}" data-ns="${k}">${cur===k?'✓ ':''}${NS_L[k]}</button>`;
+  showModal(`<div class="modal-title">Fayl adları</div>
+    <div style="color:rgba(255,255,255,.6);font-size:13px;margin:0 0 8px">Yeni əlavə olunan fayllar:</div>
+    <div class="modal-actions" style="flex-direction:column;gap:6px">${nb('num')}${nb('orig')}${nb('ask')}</div>
+    ${inFolder?`<div style="color:rgba(255,255,255,.6);font-size:13px;margin:16px 0 8px">Bu bölmədəkilər (${list.length} fayl, ${withOrig}-nın öz adı yadda qalıb):</div>
+    <div class="modal-actions" style="flex-direction:column;gap:6px"><button class="btn" id="raOrig">📄 Öz adlarına qaytar</button><button class="btn" id="raNum">🔢 Hamısını rəqəmlə</button></div>`:''}
+    <div class="modal-actions" style="margin-top:12px"><button class="btn" id="raNo">Bağla</button></div>`,true);
+  $('#raNo').onclick=hideModal;
+  document.querySelectorAll('[data-ns]').forEach(b=>b.onclick=()=>{setNameSetting(b.dataset.ns);hideModal();showToast('Yeni fayllar: '+NS_L[b.dataset.ns]);});
+  if(!inFolder)return;
+  $('#raOrig').onclick=async()=>{hideModal();if(!withOrig){showToast('Öz adı yadda qalan fayl yoxdur');return;}let n=0;
+    for(const m of list){const b=baseName(m.origName);if(b&&m.name!==b){m.name=b;await dbUpdateMedia(m);n++;}}
+    await renderFolder();showToast(n+' fayl öz adına qaytarıldı ✓');};
+  $('#raNum').onclick=()=>{hideModal();setTimeout(()=>{showModal(`<div class="modal-title">Hamısı rəqəmlənsin?</div><div style="color:rgba(255,255,255,.6);font-size:13px;margin-bottom:14px;line-height:1.5">Bütün faylların adı hazırkı sıraya görə 1, 2, 3… olacaq. Öz adları yadda qalır, istədiyiniz vaxt geri qaytara bilərsiniz.</div><div class="modal-actions"><button class="btn" id="rnNo">Xeyr</button><button class="btn primary" id="rnYes">Bəli</button></div>`,true);
+    $('#rnNo').onclick=hideModal;
+    $('#rnYes').onclick=async()=>{hideModal();const ordered=sortMediaList(list);for(let k=0;k<ordered.length;k++){const m=ordered[k];if(!m.origName)m.origName=m.name;m.name=String(k+1);await dbUpdateMedia(m);}
+      await renderFolder();showToast(ordered.length+' fayl rəqəmləndi ✓');};},300);};
+});
+let _impQ=Promise.resolve();
+function enqueueImport(f,pre){_impQ=_impQ.then(()=>importFiles(f,pre)).catch(e=>console.error(e));return _impQ;}
+fileInput.addEventListener('change',()=>{const f=Array.from(fileInput.files||[]);showToast('Seçildi: '+f.length+' fayl');enqueueImport(f,[]);});
+/* Android tərəfi PDF-ləri özü kopyalayıb bura verir (sistem seçicisinin buraxdığı PDF-lər üçün) */
+window.__picked=async function(list){const files=[],pre=[];
+  for(const it of list){if(it.error){pre.push((it.name||'?')+' — '+it.error);continue;}
+    try{const r=await fetch('/__picked/'+encodeURIComponent(it.file));if(!r.ok)throw new Error('HTTP '+r.status);const b=await r.blob();files.push(new File([b],it.name,{type:it.type||''}));}
+    catch(e){pre.push((it.name||'?')+' — oxunmadı: '+((e&&e.message)||e));}}
+  await enqueueImport(files,pre);try{Android.pickedDone();}catch(e){}};
+function askNaming(files){return new Promise(res=>{let done=false;const n=files.length;
+  let last='orig';try{last=localStorage.getItem('nameMode')==='num'?'num':'orig';}catch(e){}
+  const modes=files.map(()=>last);
+  const lab=m=>m==='orig'?'📄 Ad':'🔢 Rəqəm';
+  const rows=files.map((f,k)=>`<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><div style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:#ddd">${escapeHtml(baseName(f.name)||f.name||'?')}</div><button class="btn" data-k="${k}" style="min-width:96px;padding:9px 10px;background:rgba(255,255,255,.14);border-radius:12px">${lab(modes[k])}</button></div>`).join('');
+  showModal(`<div class="modal-title">${n} fayl – hər biri üçün seçin</div>
+    <div class="modal-actions" style="gap:6px;margin-bottom:10px"><button class="btn" id="nmAllOrig" style="background:rgba(255,255,255,.14);border-radius:12px">📄 Hamısı ad</button><button class="btn" id="nmAllNum" style="background:rgba(255,255,255,.14);border-radius:12px">🔢 Hamısı rəqəm</button></div>
+    <div id="nmList" style="max-height:42vh;overflow:auto;-webkit-overflow-scrolling:touch">${rows}</div>
+    <div id="nmCount" style="color:rgba(255,255,255,.6);font-size:12px;margin:8px 0"></div>
+    <div class="modal-actions"><button class="btn" id="nmNo">Ləğv</button><button class="btn primary" id="nmGo">Davam</button></div>`,true);
+  const btns=[...document.querySelectorAll('#nmList [data-k]')];
+  const upd=()=>{btns.forEach(b=>b.textContent=lab(modes[+b.dataset.k]));const a=modes.filter(m=>m==='orig').length;$('#nmCount').textContent=a+' fayl öz adı ilə, '+(n-a)+' fayl rəqəmlə';};
+  btns.forEach(b=>b.onclick=()=>{const k=+b.dataset.k;modes[k]=modes[k]==='orig'?'num':'orig';upd();});
+  $('#nmAllOrig').onclick=()=>{modes.fill('orig');upd();};$('#nmAllNum').onclick=()=>{modes.fill('num');upd();};
+  $('#nmGo').onclick=()=>{done=true;try{localStorage.setItem('nameMode',modes.filter(m=>m==='orig').length>=n/2?'orig':'num');}catch(e){}hideModal();res(modes.slice());};
+  window._mc=()=>{if(!done)res(null);};
+  $('#nmNo').onclick=()=>{hideModal();};upd();});}
+async function importFiles(files,pre){if(!(files.length||(pre&&pre.length))||!state.currentFolder||state.currentFolder.id==='favorites')return;
+  let nameMode=getNameSetting();if(files.length&&nameMode==='ask'){nameMode=await askNaming(files);if(!nameMode)return;}if(nameMode==='ask')nameMode='num';
+  const modeOf=i=>Array.isArray(nameMode)?nameMode[i]:nameMode;
+  const btn=$('#addMediaBtn'),orig=btn.innerHTML;btn.innerHTML='<div class="spinner"></div>';
+  const cur=await dbGetMedia(state.currentFolder.id);let next=cur.length+1;
+  const nums=cur.filter(m=>/^\d+$/.test(String(m.name||''))).map(m=>parseInt(m.name,10));if(nums.length)next=Math.max(...nums)+1;
+  const fails=[...(pre||[])];let count=0,fail=fails.length,lastErr='';
+  const withTimeout=(p,ms)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error('vaxt bitdi')),ms))]);
+  for(let fi=0;fi<files.length;fi++){const file=files[fi];try{
+    showToast('Əlavə edilir: '+(fi+1)+' / '+files.length);await new Promise(r=>setTimeout(r,40));
+    let type=null;const fn=(file.name||'').toLowerCase(),ft=file.type||'';
+    if(ft.startsWith('video')||/\.(mp4|mkv|webm|mov|3gp|avi|m4v)$/.test(fn))type='video';else if(ft.startsWith('image')||/\.(jpe?g|png|webp|gif|bmp|heic)$/.test(fn))type='image';
+    else if(ft==='application/pdf'||/\.pdf$/.test(fn)||ft==='application/x-pdf')type='pdf';if(!type){try{const h=new Uint8Array(await file.slice(0,5).arrayBuffer());if(String.fromCharCode(...h)==='%PDF-')type='pdf';}catch(e){}}
+    if(!type){fail++;lastErr='format dəstəklənmir ('+(ft||fn.split('.').pop())+')';fails.push((file.name||'?')+' — '+lastErr);continue;}
+    let thumbnail=null,store=file;
+    if(type==='pdf'||type==='image'){const buf=await file.arrayBuffer();store=new Blob([buf],{type:ft||(type==='pdf'?'application/pdf':'image/jpeg')});
+      if(type==='pdf'&&typeof pdfjsLib!=='undefined'){try{thumbnail=await withTimeout((async()=>{
+        const pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise,pg=await pdf.getPage(1),vp=pg.getViewport({scale:.4}),c=document.createElement('canvas');
+        c.width=vp.width;c.height=vp.height;await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;const t=c.toDataURL('image/jpeg',.6);c.width=0;try{await pdf.destroy();}catch(e){}return t;})(),15000);}catch(err){thumbnail=null;}}
+      else if(type==='image'){try{thumbnail=await imageThumb(store);}catch(err){}}}
+    else{try{thumbnail=await withTimeout(generateVideoThumbnail(file),15000);}catch(err){}}
+    await dbAddMedia({id:'m_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),folderId:state.currentFolder.id,type,blob:store,name:(modeOf(fi)==='orig'&&((file.name||'').replace(/\.[^.\/]+$/,'').trim()))||String(next),size:file.size,createdAt:Date.now(),isFavorite:false,thumbnail,origName:file.name||''});
+    if(modeOf(fi)!=='orig'||!((file.name||'').replace(/\.[^.\/]+$/,'').trim()))next++;count++;}catch(e){fail++;lastErr=(e&&e.message)||String(e);fails.push((file.name||'?')+' — '+lastErr);console.error(e);}}
+  window._lastImportErr=lastErr;
+  btn.innerHTML=orig;await renderFolder();showToast((count>0?`${count} fayl əlavə edildi ✓`:'Heç nə əlavə edilmədi')+(fail?` • ${fail} alınmadı (${window._lastImportErr})`:''));
+  if(fails.length){showModal(`<div class="modal-title">${fails.length} fayl əlavə olunmadı</div><div style="color:#bbb;font-size:13px;line-height:1.5;max-height:40vh;overflow:auto;word-break:break-all">${fails.map(x=>String(x).replace(/</g,'&lt;')).join('<br><br>')}</div><div class="modal-actions"><button class="btn primary" id="flOk">Bağla</button></div>`,true);$('#flOk').onclick=hideModal;}
+}
+$('#modalOverlay').addEventListener('click',e=>{if(e.target.id==='modalOverlay')hideModal();});
+
+/* ============================================================================
+   OXUYUCU MÜHƏRRİKİ (şəkil + PDF): tək "sheet" transform ilə hərəkət edir,
+   yalnız görünən səhifələr render olunur, hər şey requestAnimationFrame ilə.
+   ============================================================================ */
+const vp=$('#viewerContent'),sheet=$('#zoomableWrapper'),scroller=$('#customScroller'),track=$('#scrollTrack'),pill=$('#scrollPill'),badge=$('#pgBadge'),tbPg=$('#tbPg');
+const penSettings=$('#penSettings'),mediaToolbar=$('#mediaToolbar'),favBtn=$('#viewerFavBtn');
+const GAP=10,TOP=60,BOT=100;
+const Q=()=>Math.min(window.devicePixelRatio||1,2);          // baza kəskinlik (maks 2)
+const zbOf=()=>Math.min(s,3);                                 // zoom artdıqca yenidən kəskin render (maks 3x)
+const qOf=(p,zb)=>Math.min(Q()*zb,Math.sqrt(5e6/Math.max(1,W*p.hh)));   // bir səhifə ~5 milyon pikseldən çox olmasın (yaddaş)
+let pillMv=1,lastPg=0,settleN=0,hideT=0,lastPokeTy=null,anim=null,tap=null,lastTap=null,lastVSave=0;
+let item=null,kind='',pdf=null,url=null,tok=0,pages=[],strokes=[],redo=[],dirty=false;
+let W=1,H=1,vw=1,vh=1,vl=0,vt=0,s=1,tx=0,ty=0,vx=0,vy=0,drag=false,raf=0,lastT=0,lastVis=1e9,pan=null,pin=null,cur=null,need=false,saveT=0,activeVideo=null;
+const ptrs=new Map();
+function resize(){vw=vp.clientWidth;vh=vp.clientHeight;pillMv=Math.max(1,track.clientHeight-pill.offsetHeight);kick();}
+window.addEventListener('resize',resize);
+
+/* ---- Sərhədlər: kontent kiçikdirsə mərkəzdə, böyükdürsə kənara çıxa bilməz ---- */
+function bounds(sc=s){const cw=W*sc,ch=H*sc;
+  return{minX:cw<=vw?(vw-cw)/2:vw-cw,maxX:cw<=vw?(vw-cw)/2:0,minY:ch<=vh?(vh-ch)/2:vh-ch,maxY:ch<=vh?(vh-ch)/2:0};}
+const soft=(v,a,b)=>v>b?b+(v-b)*.35:v<a?a+(v-a)*.35:v;     // barmaq altında rezin müqavimət
+
+/* ---- Vahid animasiya dövrü: inertia + elastik geri oturma + qələm çəkilişi ---- */
+function kick(){if(!raf)raf=requestAnimationFrame(tick);}
+function tick(now){raf=0;const dt=Math.min(32,now-(lastT||now));lastT=now;let busy=false;
+  if(anim){const k=Math.max(0,Math.min(1,(now-anim.t0)/anim.d)),e=1-Math.pow(1-k,3);
+    s=anim.s0+(anim.s1-anim.s0)*e;tx=anim.x0+(anim.x1-anim.x0)*e;ty=anim.y0+(anim.y1-anim.y0)*e;vx=vy=0;busy=true;if(k>=1)anim=null;}
+  else if(!drag){const b=bounds();
+    if(Math.abs(vx)>.02||Math.abs(vy)>.02){tx+=vx*dt;ty+=vy*dt;const f=Math.exp(-dt*.0019);vx*=f;vy*=f;busy=true;}else vx=vy=0;
+    const cx=clamp(tx,b.minX,b.maxX),cy=clamp(ty,b.minY,b.maxY);
+    if(Math.abs(cx-tx)>.4||Math.abs(cy-ty)>.4){tx+=(cx-tx)*.25;ty+=(cy-ty)*.25;if(cx!==tx)vx=0;if(cy!==ty)vy=0;busy=true;}
+    else{tx=cx;ty=cy;}}
+  if(cur&&need)drawCur();
+  paintView();if(kind==='pdf')pump();
+  if(busy||drag||cur)raf=requestAnimationFrame(tick);else{lastT=0;settle();}}
+function paintView(){
+  sheet.style.transform=`translate3d(${tx}px,${ty}px,0) scale(${s})`;
+  // Pill: bölən heç vaxt 0 olmur (Math.max), mövqe Math.min/Math.max ilə məhdudlaşır
+  const range=Math.max(0,H*s-vh),mv=pillMv;   // ölçü keşlənib: hər kadrda layout oxunmur
+  const r=range>1?clamp(-ty/range,0,1):0;
+  if(!pillDrag)pill.style.transform=badge.style.transform=`translateY(${r*mv}px)`;
+  // Yığcam qulp yalnız sürüşdürmə zamanı görünür, 1.3 san sonra yox olur
+  const elig=range>30&&kind!=='video'&&!!item;
+  if(pages.length>1){badge.style.display='';tbPg.style.display='';const pg=pageAt((-ty+vh/2)/s)+1;if(pg!==lastPg){lastPg=pg;badge.textContent=pg+'/'+pages.length;tbPg.textContent=pg;}}else{badge.style.display='none';tbPg.style.display='none';}
+  if(!elig)scroller.classList.remove('show');
+  else if(pillDrag||(lastPokeTy!==null&&Math.abs(ty-lastPokeTy)>.5))poke();
+  lastPokeTy=ty;
+  if(csel)cropPaint();
+  if(Math.abs(ty-lastVis)>40){lastVis=ty;updateVisible();}}
+function poke(){scroller.classList.add('show');clearTimeout(hideT);if(!pillDrag)hideT=setTimeout(()=>scroller.classList.remove('show'),1300);}
+function settle(){if(!item)return;updateVisible();savePos();ensureText();
+  activeSet.forEach(i=>{const p=pages[i],zb=zbOf();if(p.ann&&Math.abs(zb-p.zb)>.25)mkAnn(p,i,zb);});   // zoomdan sonra qeydlər də kəskin
+  if(pdf&&!rt&&++settleN%12===0){try{pdf.cleanup(true);}catch(e){}}}
+
+/* ---- Səhifələr ---- */
+function build(){sheet.innerHTML='';H=TOP;
+  pages.forEach((p,idx)=>{p.i=idx;p.top=H;p.hh=W*p.ratio;const d=document.createElement('div');d.className='pg';
+    d.style.cssText=`width:${W}px;height:${p.hh}px;top:${p.top}px`;sheet.appendChild(d);p.el=d;p.on=false;p.tok=0;p.lvl=0;p.rzb=0;H+=p.hh+GAP;});
+  H=H-GAP+BOT;sheet.style.width=W+'px';sheet.style.height=H+'px';}
+function mkAnn(p,i,zb){const q=Math.min(qOf(p,zb),3);let a=p.ann;if(!a){a=p.ann=document.createElement('canvas');p.el.appendChild(a);}
+  a.width=Math.round(W*q);a.height=Math.round(p.hh*q);p.zb=zb;replay(p,i);}
+const activeSet=new Set();let rt=null;
+function act(i){const p=pages[i];if(!p||p.on)return;p.on=true;activeSet.add(i);
+  if(strokes.some(st=>st.p===i))mkAnn(p,i,zbOf());}      // qeyd canvas-ı yalnız lazım olanda yaranır (axıcılıq + yaddaş)
+function deact(p){p.on=false;p.tok++;activeSet.delete(p.i);dropText(p);{const k=textPages.indexOf(p.i);if(k>=0)textPages.splice(k,1);}
+  if(rt&&rt.p===p){try{rt.task.cancel();}catch(e){}rt=null;}
+  [p.canvas,p.ann].forEach(c=>{if(c){c.width=0;c.remove();}});p.canvas=p.ann=null;p.lvl=0;p.rzb=0;}
+const pageAt=cy=>{let lo=0,hi=pages.length-1;while(lo<hi){const m=(lo+hi+1)>>1;if(cy>=pages[m].top-GAP)lo=m;else hi=m-1;}return lo;};
+function updateVisible(){if(!pages.length)return;const a=pageAt(-ty/s),b=pageAt((-ty+vh)/s);
+  if(kind==='image'){act(0);return;}
+  for(let i=Math.max(0,a-2);i<=Math.min(pages.length-1,b+2);i++)act(i);
+  activeSet.forEach(i=>{if(i<a-4||i>b+4)deact(pages[i]);});
+  pump();}
+function isFast(){if(pin||pillDrag||anim)return true;const moving=!pan||performance.now()-pan.lt<100;return moving&&(Math.abs(vy)>.35||Math.abs(vx)>.35);}
+// Bir anda bir render. Yeni səhifələr əvvəl tez "aşağı keyfiyyətlə" çəkilir (boş ağ yer qalmır), hərəkət yavaşlayanda kəskin versiya gəlir.
+function pump(){if(kind!=='pdf'||!item||!pages.length)return;const fast=isFast();
+  if(rt){if(fast&&rt.level==='full'){try{rt.task.cancel();}catch(e){}rt=null;}else return;}
+  const c=(-ty+vh/2)/s,zb=zbOf();let best=-1,bd=1e12,lv='';
+  activeSet.forEach(i=>{const p=pages[i];
+    const need=p.lvl===0?(fast?'low':'full'):(!fast&&(p.lvl<2||Math.abs(p.rzb-zb)>.25)?'full':'');if(!need)return;
+    const d=(need==='low'?0:1e6)+Math.abs(p.top+p.hh/2-c);if(d<bd){bd=d;best=i;lv=need;}});
+  if(best>=0)startRender(best,lv);}
+function startRender(i,level){const p=pages[i],t=++p.tok,zb=zbOf(),q=level==='low'?1:qOf(p,zb);
+  const v=p.pg.getViewport({scale:W/p.w*q}),c=document.createElement('canvas');c.width=v.width|0;c.height=v.height|0;
+  const task=p.pg.render({canvasContext:c.getContext('2d'),viewport:v}),me=rt={p,level,task};
+  task.promise.then(()=>{
+    if(t===p.tok&&p.on){if(p.canvas){p.canvas.width=0;p.canvas.remove();}p.canvas=c;p.el.insertBefore(c,p.el.firstChild);p.lvl=level==='low'?1:2;p.rzb=level==='low'?0:zb;}
+    else c.width=0;
+    if(rt===me)rt=null;pump();
+  }).catch(e=>{c.width=0;if(!(e&&e.name==='RenderingCancelledException')){p.lvl=2;p.rzb=zb;}if(rt===me)rt=null;pump();});}
+
+/* ---- Son mövqe: setTimeout yoxdur, hesablanan kimi dərhal tətbiq olunur ---- */
+function putPos(id,o){o.t=Date.now();try{localStorage.setItem('pos:'+id,JSON.stringify(o));}catch(e){}dbPutAnn('pos:'+id,o);}
+async function loadPos(id){let a=null,b=null;
+  try{a=JSON.parse(localStorage.getItem('pos:'+id)||'null');}catch(e){}
+  try{b=await dbGetAnn('pos:'+id);}catch(e){}
+  if(Array.isArray(b))b=null;if(typeof a==='number')a={v:a};
+  return(a&&b)?((b.t||0)>=(a.t||0)?b:a):(a||b);}
+function savePos(){if(!item||kind==='video')return;const rg=Math.max(0,H*s-vh);putPos(item.id,{r:rg>1?clamp(-ty/rg,0,1):0,s});}
+function restore(sv){s=sv&&sv.s?clamp(sv.s,1,5):1;const rg=Math.max(0,H*s-vh);ty=sv&&sv.r!=null?-clamp(sv.r,0,1)*rg:0;tx=(vw-W*s)/2;
+  const b=bounds();tx=clamp(tx,b.minX,b.maxX);ty=clamp(ty,b.minY,b.maxY);lastVis=1e9;}
+
+/* ---- Faylı açmaq ---- */
+function nativeOpen(m){const u=URL.createObjectURL(m.blob),a=document.createElement('a');
+  a.href=u;a.target='_blank';a.download=m.name+'.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);}
+$('#nativeBtn').onclick=()=>item&&nativeOpen(item);
+async function openViewer(m){
+  if(m.type==='pdf'&&typeof pdfjsLib==='undefined'){showToast('İnternet yoxdur – telefonun oxuyucusu ilə açılır');nativeOpen(m);return;}
+  lastPokeTy=null;lastPg=0;const my=++tok;item=m;kind=m.type;dirty=false;strokes=[];redo=[];pages=[];activeSet.clear();rt=null;vx=vy=0;
+  favBtn.textContent=m.isFavorite?'⭐':'☆';favBtn.style.color=m.isFavorite?'#ffd700':'#fff';
+  const vs=$('#viewerScreen');vs.classList.remove('hidden','slide-out-right');vs.classList.add('slide-in-right');
+  history.pushState({screen:'viewer'},'');setTimeout(()=>vs.classList.remove('slide-in-right'),420);
+  const isVid=kind==='video';document.body.classList.toggle('vidmode',isVid);mediaToolbar.classList.add('show');$('#nativeBtn').style.display=kind==='pdf'?'flex':'none';
+  setTool('pan');penSettings.classList.remove('show');sheet.innerHTML='';resize();W=vw;
+  if(isVid){openVideo(m);return;}
+  const msg=document.createElement('div');msg.className='viewer-msg';msg.innerHTML='<div class="spinner" style="border-top-color:#fff"></div><span>Yüklənir…</span>';vp.appendChild(msg);
+  let savedPos=null;
+  try{
+    strokes=await dbGetAnn(m.id);savedPos=await loadPos(m.id);
+    if(kind==='pdf'){pdf=await pdfjsLib.getDocument({data:await m.blob.arrayBuffer()}).promise;
+      const pgs=await Promise.all(Array.from({length:pdf.numPages},(_,i)=>pdf.getPage(i+1)));
+      pages=pgs.map(pg=>{const v=pg.getViewport({scale:1});return{pg,w:v.width,ratio:v.height/v.width};});}
+    else{url=URL.createObjectURL(m.blob);const im=new Image();im.src=url;await im.decode();pages=[{ratio:im.naturalHeight/im.naturalWidth,im}];}
+  }catch(e){msg.remove();if(my===tok){showToast('Fayl açıla bilmədi');history.back();}return;}
+  msg.remove();if(my!==tok){if(pdf){pdf.destroy();pdf=null;}if(url){URL.revokeObjectURL(url);url=null;}return;}
+  build();
+  if(kind==='image'){const p=pages[0];p.im.removeAttribute('width');p.el.appendChild(p.im);}
+  restore(savedPos);updateVisible();paintView();kick();
+}
+function openVideo(m){
+  const v=document.createElement('video');url=URL.createObjectURL(m.blob);v.src=url;v.playsInline=true;activeVideo=v;
+  let sv=0;const seek=$('#customSeekBar');
+  loadPos(m.id).then(o=>{sv=(o&&o.v)||0;if(sv>0&&v.duration&&sv<v.duration-1&&v.currentTime<1)v.currentTime=sv;});
+  v.onloadedmetadata=()=>{if(sv>0&&sv<v.duration-1)v.currentTime=sv;$('#customTotalTime').textContent=fmt(v.duration);};
+  v.ontimeupdate=()=>{if(Date.now()-lastVSave>3000){lastVSave=Date.now();putPos(m.id,{v:v.currentTime||0});}if(!seeking){seek.value=(v.currentTime/(v.duration||1))*100;$('#customCurrentTime').textContent=fmt(v.currentTime);}};
+  v.onplay=()=>$('#customPlayBtn').textContent='⏸️';v.onpause=()=>$('#customPlayBtn').textContent='▶️';
+  vp.appendChild(v);const c=$('#customVideoControls');c.classList.add('show');
+  c.style.cssText='';seek.value=0;$('#customPlayBtn').textContent='▶️';v.play().catch(()=>{});
+  vMake();dbGetAnn(m.id).then(a=>{if(item&&item.id===m.id&&kind==='video'){strokes=a||[];redo=[];vReplay();}}).catch(()=>{});
+}
+async function closeViewer(){
+  if(!item)return;tok++;clearCrop();lastPokeTy=null;clearTimeout(hideT);const m=item;cancelStroke();
+  if(kind==='video'&&activeVideo){putPos(m.id,{v:activeVideo.currentTime||0});activeVideo.pause();activeVideo.removeAttribute('src');activeVideo.load();activeVideo.remove();activeVideo=null;}
+  else savePos();
+  let thumb=null;   // çəkilmiş qeydlər bölmədəki üz qabığında da görünsün
+  if(dirty&&pages[0]&&strokes.some(x=>x.p===0)){const p=pages[0],bg=kind==='pdf'?p.canvas:p.im;
+    if(bg&&p.ann){try{const c=document.createElement('canvas');c.width=400;c.height=Math.round(400*p.ratio);const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);
+      x.drawImage(bg,0,0,c.width,c.height);x.drawImage(p.ann,0,0,c.width,c.height);thumb=c.toDataURL('image/jpeg',.6);c.width=0;}catch(e){}}}
+  clearTimeout(saveT);if(dirty)dbPutAnn(m.id,strokes);
+  const vs=$('#viewerScreen');vs.classList.add('slide-out-right');mediaToolbar.classList.remove('show');penSettings.classList.remove('show');$('#customVideoControls').classList.remove('show');scroller.classList.remove('show');
+  pages.forEach(deact);activeSet.clear();rt=null;if(pdf){pdf.destroy();pdf=null;}if(url){URL.revokeObjectURL(url);url=null;}
+  sheet.innerHTML='';vp.querySelectorAll('video,.viewer-msg,#vidAnn').forEach(e=>e.remove());vcan=null;vcur=null;document.body.classList.remove('vidmode');
+  pages=[];strokes=[];redo=[];ptrs.clear();pan=pin=cur=null;drag=false;vx=vy=0;item=null;
+  setTimeout(()=>{vs.classList.add('hidden');vs.classList.remove('slide-out-right');},420);
+  if(thumb){m.thumbnail=thumb;await dbUpdateMedia(m);}
+  await renderFolder();
+}
+$('#viewerBackBtn').addEventListener('click',()=>history.back());
+favBtn.addEventListener('click',async()=>{if(!item)return;item.isFavorite=!item.isFavorite;await dbUpdateMedia(item);
+  favBtn.textContent=item.isFavorite?'⭐':'☆';favBtn.style.color=item.isFavorite?'#ffd700':'#fff';
+  showToast(item.isFavorite?'Sevimlilərə əlavə edildi ⭐':'Sevimlilərdən çıxarıldı');await renderFolder();});
+
+/* ---- Alətlər: qələm / marker / pozan üçün ayrı ayarlar, localStorage-da saxlanılır ---- */
+const toolSettings=Object.assign({pen:{color:'#ff0000',width:5,opacity:1},marker:{color:'#ffeb3b',width:25,opacity:.4},eraser:{color:'#000000',width:30,opacity:1}},JSON.parse(localStorage.getItem('tools')||'{}'));
+const saveTools=()=>localStorage.setItem('tools',JSON.stringify(toolSettings));
+let tool='pan';const toolBtns={pan:$('#panBtn'),pen:$('#penBtn'),marker:$('#markerBtn'),eraser:$('#eraserBtn'),crop:$('#cropBtn')};
+function setTool(t){tool=t;if(vcan)vcan.style.pointerEvents=(t==='pen'||t==='marker'||t==='eraser')?'auto':'none';document.body.classList.toggle('drawing',t!=='pan');if(t==='pan')ensureText();Object.entries(toolBtns).forEach(([k,b])=>b.classList.toggle('active',k===t));
+  if(t!=='crop')clearCrop();
+  if(t==='pan'||t==='crop'){penSettings.classList.remove('show');return;}
+  const T=toolSettings[t];penSettings.classList.add('show');$('#colorPicker').value=T.color;$('#sizeSlider').value=T.width;$('#opacitySlider').value=T.opacity;
+  const cp=$('#colorPicker').parentElement;cp.style.opacity=t==='eraser'?.3:1;cp.style.pointerEvents=t==='eraser'?'none':'auto';}
+Object.entries(toolBtns).forEach(([k,b])=>b.addEventListener('click',()=>{if(k!=='pan'&&tool===k&&penSettings.classList.contains('show'))penSettings.classList.remove('show');else setTool(k);}));
+/* Alət paneli: dəstəyə toxunanda dairəyə yığılır, yenə toxunanda animasiya ilə açılır (vəziyyət yadda qalır) */
+const tbHandle=$('#tbHandle');
+function setCollapsed(c,save){mediaToolbar.classList.toggle('collapsed',c);tbHandle.textContent=c?'❯':'❮';
+  if(c)penSettings.classList.remove('show');if(save)localStorage.setItem('tbCollapsed',c?'1':'0');}
+tbHandle.addEventListener('click',()=>setCollapsed(!mediaToolbar.classList.contains('collapsed'),true));
+setCollapsed(localStorage.getItem('tbCollapsed')==='1',false);
+$('#closeSettingsBtn').onclick=()=>penSettings.classList.remove('show');
+$('#colorPicker').oninput=e=>{if(tool!=='pan'&&tool!=='eraser'){toolSettings[tool].color=e.target.value;saveTools();}};
+$('#sizeSlider').oninput=e=>{if(tool!=='pan'){toolSettings[tool].width=+e.target.value;saveTools();}};
+$('#opacitySlider').oninput=e=>{if(tool!=='pan'){toolSettings[tool].opacity=+e.target.value;saveTools();}};
+
+/* ---- Çəkiliş: koordinatlar səhifə enine görə normallaşdırılıb (zoomdan asılı olmur) ---- */
+function paint(ctx,st,pw,from){const P=st.pts;let i=from||0;if(P.length<2)return;
+  ctx.save();ctx.lineCap=ctx.lineJoin='round';ctx.lineWidth=Math.max(.5,st.w*pw);ctx.globalAlpha=st.a;
+  ctx.globalCompositeOperation=st.t==='eraser'?'destination-out':'source-over';ctx.strokeStyle=st.c;
+  ctx.beginPath();ctx.moveTo(P[i]*pw,P[i+1]*pw);
+  if(P.length-i<4)ctx.lineTo(P[i]*pw+.01,P[i+1]*pw);
+  else{for(i+=2;i<P.length-2;i+=2)ctx.quadraticCurveTo(P[i]*pw,P[i+1]*pw,(P[i]+P[i+2])/2*pw,(P[i+1]+P[i+3])/2*pw);
+    ctx.lineTo(P[P.length-2]*pw,P[P.length-1]*pw);}
+  ctx.stroke();ctx.restore();}
+function replay(p,i){const x=p.ann.getContext('2d');strokes.forEach(st=>{if(st.p===i)paint(x,st,p.ann.width);});}
+function strokeStart(x,y){const i=pageAt((y-ty)/s),p=pages[i];if(!p||!p.on)return;if(!p.ann)mkAnn(p,i,zbOf());
+  const T=toolSettings[tool];cur={p:i,t:tool,c:T.color,a:T.opacity,w:T.width/(s*W),pts:[],n:0};
+  if(tool!=='eraser'){const l=document.createElement('canvas');l.width=p.ann.width;l.height=p.ann.height;
+    l.style.cssText=`position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;opacity:${T.opacity}`;p.el.appendChild(l);cur.live=l;}   // şəffaflıq canvas səviyyəsində: marker üst-üstə düşəndə tünd olmur
+  addPt(x,y);}
+function addPt(x,y){const p=pages[cur.p];cur.pts.push(+(((x-tx)/s)/W).toFixed(4),+((((y-ty)/s)-p.top)/W).toFixed(4));need=true;kick();}
+function drawCur(){need=false;const p=pages[cur.p];if(!p||!p.ann)return;
+  if(cur.live){const x=cur.live.getContext('2d');x.clearRect(0,0,cur.live.width,cur.live.height);paint(x,{...cur,a:1},cur.live.width);}
+  else{paint(p.ann.getContext('2d'),cur,p.ann.width,cur.n);cur.n=cur.pts.length-2;}}
+function strokeEnd(){const c=cur;cur=null;if(!c)return;const p=pages[c.p];
+  if(c.live){if(p&&p.ann)paint(p.ann.getContext('2d'),c,p.ann.width);c.live.width=0;c.live.remove();}
+  else if(need&&p&&p.ann)paint(p.ann.getContext('2d'),c,p.ann.width,c.n);
+  need=false;delete c.live;delete c.n;strokes.push(c);redo=[];dirty=true;saveAnn();}
+function cancelStroke(){if(!cur)return;const p=pages[cur.p],i=cur.p;if(cur.live){cur.live.width=0;cur.live.remove();}cur=null;need=false;if(p&&p.ann)mkAnn(p,i,p.zb);}
+function saveAnn(){clearTimeout(saveT);const id=item&&item.id,st=strokes;saveT=setTimeout(()=>{if(id)dbPutAnn(id,st);},300);}
+function redrawPage(i){const p=pages[i];if(p&&p.on)mkAnn(p,i,p.zb||zbOf());}
+$('#undoBtn').onclick=()=>{const st=strokes.pop();if(!st)return;redo.push(st);dirty=true;redrawPage(st.p);if(kind==='video')vReplay();saveAnn();};
+$('#redoBtn').onclick=()=>{const st=redo.pop();if(!st)return;strokes.push(st);dirty=true;redrawPage(st.p);if(kind==='video')vReplay();saveAnn();};
+
+
+/* ---- Video üzərində çəkiliş: qələm / marker / pozan (qeydlər videoya aid saxlanılır) ---- */
+var vcan=null,vcur=null,vraf=0;
+function vReplay(){if(!vcan)return;const w=vp.clientWidth,h=vp.clientHeight;if(vcan.width!==w||vcan.height!==h){vcan.width=w;vcan.height=h;}
+  const x=vcan.getContext('2d');x.clearRect(0,0,vcan.width,vcan.height);strokes.forEach(st=>paint(x,st,vcan.width));if(vcur)paint(x,vcur,vcan.width);}
+function vSoon(){if(vraf)return;vraf=requestAnimationFrame(()=>{vraf=0;vReplay();});}
+function vMake(){if(vcan)vcan.remove();vcan=document.createElement('canvas');vcan.id='vidAnn';
+  vcan.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;z-index:5;touch-action:none;pointer-events:none;';
+  vcan.width=vp.clientWidth;vcan.height=vp.clientHeight;vp.appendChild(vcan);
+  const pt=e=>{const r=vcan.getBoundingClientRect();return[+((e.clientX-r.left)/vcan.width).toFixed(4),+((e.clientY-r.top)/vcan.width).toFixed(4)];};
+  vcan.addEventListener('pointerdown',e=>{if(tool==='pan'||tool==='crop')return;e.preventDefault();e.stopPropagation();try{vcan.setPointerCapture(e.pointerId);}catch(_){}
+    const T=toolSettings[tool];vcur={p:0,t:tool,c:T.color,a:T.opacity,w:T.width/vcan.width,pts:pt(e)};vSoon();},{passive:false});
+  vcan.addEventListener('pointermove',e=>{if(!vcur)return;e.preventDefault();e.stopPropagation();
+    const ev=e.getCoalescedEvents?e.getCoalescedEvents():[];(ev.length?ev:[e]).forEach(z=>{vcur.pts.push(...pt(z));});vSoon();},{passive:false});
+  const end=e=>{if(!vcur)return;e.stopPropagation();const c=vcur;vcur=null;strokes.push(c);redo=[];dirty=true;saveAnn();vReplay();};
+  vcan.addEventListener('pointerup',end);vcan.addEventListener('pointercancel',end);
+  setTool(tool);}
+
+/* ---- Toxunuş: pointer events, touch-action:none, preventDefault + stopPropagation ---- */
+function startPan(){const q=[...ptrs.values()][0];pan={x:q.x,y:q.y,tx,ty,lt:performance.now(),h:[{t:performance.now(),x:q.x,y:q.y}]};drag=true;}
+function startPin(){const[a,b]=[...ptrs.values()],mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+  pin={d:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y)),s,cx:(mx-tx)/s,cy:(my-ty)/s};pan=null;drag=true;}
+vp.addEventListener('pointerdown',e=>{if(!item||kind==='video')return;if(tool!=='pan')e.preventDefault();e.stopPropagation();
+  const r=vp.getBoundingClientRect();vl=r.left;vt=r.top;try{vp.setPointerCapture(e.pointerId);}catch(_){}
+  ptrs.set(e.pointerId,{x:e.clientX-vl,y:e.clientY-vt});anim=null;
+  if(ptrs.size===1){vx=vy=0;tap={t:performance.now(),x:e.clientX-vl,y:e.clientY-vt,ok:true};tool==='pan'?startPan():tool==='crop'?cropDown(e.clientX-vl,e.clientY-vt):strokeStart(e.clientX-vl,e.clientY-vt);}
+  else if(ptrs.size===2){tap=null;lastTap=null;cancelStroke();cropCancelDrag();startPin();}kick();},{passive:false});
+vp.addEventListener('pointermove',e=>{const o=ptrs.get(e.pointerId);if(!o)return;e.preventDefault();e.stopPropagation();
+  const x=e.clientX-vl,y=e.clientY-vt;if(tap&&Math.hypot(x-tap.x,y-tap.y)>12)tap.ok=false;
+  if(ptrs.size>=2&&pin){o.x=x;o.y=y;const[a,b]=[...ptrs.values()],d=Math.hypot(a.x-b.x,a.y-b.y),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+    s=clamp(pin.s*d/pin.d,1,5);tx=mx-pin.cx*s;ty=my-pin.cy*s;const bd=bounds();tx=soft(tx,bd.minX,bd.maxX);ty=soft(ty,bd.minY,bd.maxY);}
+  else if(cur){const ev=e.getCoalescedEvents?e.getCoalescedEvents():[];(ev.length?ev:[e]).forEach(z=>addPt(z.clientX-vl,z.clientY-vt));}
+  else if(cropDrag){cropMove(x,y);}
+  else if(pan){const now=performance.now(),dt=Math.max(1,now-pan.lt);
+    pan.h.push({t:now,x,y});while(pan.h.length>2&&now-pan.h[0].t>100)pan.h.shift();
+    const f0=pan.h[0],dtt=Math.max(1,now-f0.t);vx=(x-f0.x)/dtt;vy=(y-f0.y)/dtt;pan.lt=now;
+    const bd=bounds();tx=soft(pan.tx+x-pan.x,bd.minX,bd.maxX);ty=soft(pan.ty+y-pan.y,bd.minY,bd.maxY);}
+  o.x=x;o.y=y;kick();},{passive:false});
+function up(e){if(!ptrs.has(e.pointerId))return;e.stopPropagation();const wasSingle=ptrs.size===1;ptrs.delete(e.pointerId);if(cur)strokeEnd();if(cropDrag)cropUp();
+  if(ptrs.size===1&&pin){pin=null;startPan();}
+  else if(ptrs.size===0){if(pan&&performance.now()-pan.lt>80)vx=vy=0;pan=pin=null;drag=false;}
+  if(wasSingle&&tap&&tap.ok&&tool==='pan'&&performance.now()-tap.t<300){const now=performance.now();
+    if(lastTap&&now-lastTap.t<350&&Math.hypot(tap.x-lastTap.x,tap.y-lastTap.y)<50){lastTap=null;doubleTap(tap.x,tap.y);}
+    else lastTap={t:now,x:tap.x,y:tap.y};}
+  tap=null;kick();}
+// İkiqat toxunuş: böyüt (2.5x, toxunulan nöqtəyə) / geri kiçilt (1x), animasiyalı
+function doubleTap(x,y){const ns=s>1.1?1:2.5,cx=(x-tx)/s,cy=(y-ty)/s,b=bounds(ns);
+  anim={t0:performance.now(),d:260,s0:s,s1:ns,x0:tx,x1:clamp(x-cx*ns,b.minX,b.maxX),y0:ty,y1:clamp(y-cy*ns,b.minY,b.maxY)};vx=vy=0;kick();}
+vp.addEventListener('pointerup',up);vp.addEventListener('pointercancel',up);
+
+/* ---- Sağdakı sürüşdürmə düyməsi (pill) ---- */
+let pillDrag=false;
+pill.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();pill.setPointerCapture(e.pointerId);pillDrag=true;drag=true;vx=vy=0;clearTimeout(hideT);});
+pill.addEventListener('pointermove',e=>{if(!pillDrag)return;e.preventDefault();e.stopPropagation();
+  const r=track.getBoundingClientRect(),mv=Math.max(1,r.height-pill.offsetHeight);
+  const ratio=Math.min(1,Math.max(0,(e.clientY-r.top-pill.offsetHeight/2)/mv));
+  pill.style.transform=badge.style.transform=`translateY(${ratio*mv}px)`;ty=-ratio*Math.max(0,H*s-vh);kick();});
+const pillEnd=()=>{pillDrag=false;drag=false;poke();kick();};pill.addEventListener('pointerup',pillEnd);pill.addEventListener('pointercancel',pillEnd);
+
+/* ---- Səhifə nişanına toxun -> nömrə yaz -> həmin səhifəyə get ---- */
+badge.addEventListener('click',e=>{e.stopPropagation();clearTimeout(hideT);if(pages.length<2)return;
+  showModal(`<div class="modal-title">Səhifəyə get</div><input type="number" inputmode="numeric" class="modal-input" id="pgInput" placeholder="1 – ${pages.length}"><div class="modal-actions"><button class="btn" id="pgCancel">Ləğv et</button><button class="btn primary" id="pgGo">Get</button></div>`,true);
+  const inp=$('#pgInput');setTimeout(()=>inp.focus(),100);$('#pgCancel').onclick=()=>{hideModal();poke();};
+  const go=()=>{const n=parseInt(inp.value,10);if(isNaN(n))return;hideModal();goToPage(clamp(n,1,pages.length)-1);};
+  $('#pgGo').onclick=go;inp.addEventListener('keydown',ev=>{if(ev.key==='Enter')go();});});
+function goToPage(i){const b=bounds();vx=vy=0;anim=null;ty=clamp(-(pages[i].top-8)*s,b.minY,b.maxY);updateVisible();savePos();poke();kick();}
+
+/* ============ MƏTN KOPYALA (düsturlar daxil) + SƏHİFƏNİ QALEREYAYA YÜKLƏ ============ */
+const curPage=()=>pageAt((-ty+vh/2)/s);
+const SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','−':'⁻','=':'⁼','(':'⁽',')':'⁾','n':'ⁿ','i':'ⁱ'};
+const SUB={'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋','−':'₋','=':'₌','(':'₍',')':'₎'};
+function conv(str,map,pre){let o='';for(const ch of str){if(!(ch in map))return pre+(str.length>1?'('+str+')':str);o+=map[ch];}return o;}
+// Sətirləri qur: eyni xətdə olanları birləşdir, üst/alt indeksləri (x², H₂O) Unicode ilə yaz, boşluqları düzgün qoy
+function buildLines(it){
+  it.sort((a,b)=>b.y-a.y||a.x-b.x);const L=[];
+  for(const t of it){const l=L[L.length-1];
+    if(l&&Math.abs(l.y-t.y)<=.45*Math.max(l.f,t.f)){l.items.push(t);if(t.f>l.f){l.f=t.f;l.y=t.y;}}
+    else L.push({y:t.y,f:t.f,items:[t]});}
+  let out='',py=null,pf=0;
+  for(const l of L){l.items.sort((a,b)=>a.x-b.x);let line='',prev=null;
+    for(const t of l.items){let str=t.s;const small=t.f<l.f*.8;
+      const sup=small&&t.y>l.y+l.f*.18,sub=small&&t.y<l.y-l.f*.12;
+      if(sup)str=conv(str.trim(),SUP,'^');else if(sub)str=conv(str.trim(),SUB,'_');
+      if(prev&&prev.s.trim()==='√'&&/[\s+\-−×·\/=]/.test(str.trim()))str='('+str.trim()+')';
+      if(prev){const gap=t.x-(prev.x+prev.w),sp=/\s$/.test(line)||/^\s/.test(str);
+        if(!sp){if(gap>l.f*2.5)line+='   ';else if(gap>l.f*((sup||sub)?.6:.18))line+=' ';}}
+      line+=str;prev=t;}
+    line=line.replace(/[ \t]+$/,'');if(!line.trim())continue;
+    if(py!==null)out+=(py-l.y>1.9*Math.max(l.f,pf))?'\n\n':'\n';
+    out+=line;py=l.y;pf=l.f;}
+  return out;}
+// Üst-alt yazılmış kəsrləri "a/b" formasına gətirir (yalnız yanında normal sətir mətni olanda, yanlış tapmamaq üçün)
+function mergeFractions(it,pw){
+  const srt=it.slice().sort((a,b)=>b.y-a.y||a.x-b.x),rows=[];
+  for(const t of srt){const r=rows[rows.length-1];if(r&&Math.abs(r.y-t.y)<=.3*Math.max(r.f,t.f))r.it.push(t);else rows.push({y:t.y,f:t.f,it:[t]});}
+  const G=[];
+  for(const r of rows){r.it.sort((a,b)=>a.x-b.x);let g=null;
+    for(const t of r.it){if(g&&t.x-g.x1<=.9*Math.max(g.f,t.f)){g.items.push(t);g.x1=Math.max(g.x1,t.x+t.w);g.f=Math.max(g.f,t.f);}
+      else{g={items:[t],x0:t.x,x1:t.x+t.w,y:r.y,f:t.f};G.push(g);}}}
+  const gtxt=g=>{let o='',pv=null;for(const t of g.items){if(pv&&t.x-(pv.x+pv.w)>.18*g.f&&!/\s$/.test(o))o+=' ';o+=t.s;pv=t;}return o.trim();};
+  const wr=x=>/^[\p{L}\p{N}.,√²³]+$/u.test(x)?x:'('+x+')';
+  const used=new Set(),extra=[];
+  for(const U of G){if(used.has(U))continue;
+    for(const D of G){if(D===U||used.has(D)||D.y>=U.y)continue;const f=Math.max(U.f,D.f),dy=U.y-D.y;
+      if(dy<.9*f||dy>2.6*f)continue;
+      const wu=U.x1-U.x0,wd=D.x1-D.x0;
+      if(Math.abs((U.x0+U.x1)/2-(D.x0+D.x1)/2)>.35*Math.max(wu,wd)+.3*f||Math.max(wu,wd)>pw*.45)continue;
+      const x0=Math.min(U.x0,D.x0),x1=Math.max(U.x1,D.x1),ym=(U.y+D.y)/2,tu=gtxt(U),td=gtxt(D);
+      if(tu.length>30||td.length>30)continue;
+      let base=null,between=false;
+      for(const B of G){if(B===U||B===D||used.has(B))continue;
+        if(B.y<U.y-.3*f&&B.y>D.y+.3*f&&B.x1>x0&&B.x0<x1){between=true;break;}
+        if(Math.abs(B.y-ym)<=.45*f&&((x0-B.x1>=-.3*f&&x0-B.x1<=1.6*f)||(B.x0-x1>=-.3*f&&B.x0-x1<=1.6*f)))base=B;}
+      if(between||!base)continue;
+      used.add(U);used.add(D);extra.push({s:wr(tu)+'/'+wr(td),x:x0,y:ym,f:Math.max(U.f,D.f),w:x1-x0});break;}}
+  if(!extra.length)return it;
+  const drop=new Set();used.forEach(g=>g.items.forEach(t=>drop.add(t)));
+  return it.filter(t=>!drop.has(t)).concat(extra);}
+// Riyazi simvolları səliqəyə sal: sqrt -> √, <= -> ≤, ^2 -> ², x_1 -> x₁ və s.
+function normMath(t){
+  return t.replace(/[\u00AD\u200B]/g,'').replace(/\u00A0/g,' ').replace(/[\uE000-\uF8FF]/g,'')
+    .replace(/\\?sqrt\s*\(/gi,'√(').replace(/\\?sqrt\b\s*/gi,'√').replace(/\bcbrt\b\s*/gi,'∛')
+    .replace(/<=/g,'≤').replace(/>=/g,'≥').replace(/!=/g,'≠').replace(/\+-/g,'±').replace(/->/g,'→')
+    .replace(/\^\s*\(?(-?\d+)\)?/g,(m,d)=>conv(d,SUP,'^')).replace(/(?<=[\p{L}\d)])_(\d+)/gu,(m,d)=>conv(d,SUB,'_'))
+    .replace(/Ö(?=[\d(])/g,'√');}
+function composeText(it,pw){it=mergeFractions(it,pw);const mid=pw/2,span=it.filter(t=>t.x<mid-2&&t.x+t.w>mid+2).length;
+  const Lc=it.filter(t=>t.x+t.w/2<mid),Rc=it.filter(t=>t.x+t.w/2>=mid);
+  const two=it.length>40&&span<it.length*.05&&Lc.length>it.length*.25&&Rc.length>it.length*.25;   // 2 sütunlu səhifə: əvvəl sol, sonra sağ
+  return two?buildLines(Lc)+'\n\n'+buildLines(Rc):buildLines(it);}
+async function pageText(i){
+  const pg=pages[i],tc=await pg.pg.getTextContent();
+  const it=tc.items.filter(t=>t.str&&t.str.trim()!=='').map(t=>({s:t.str,x:t.transform[4],y:t.transform[5],f:Math.hypot(t.transform[2],t.transform[3])||t.height||10,w:t.width||0}));
+  return normMath(composeText(it,pg.w).replace(/(\p{L})-\n(\p{Ll})/gu,'$1$2').trim());}
+
+/* ---- Birbaşa seçim (adi PDF tətbiqləri kimi): səhifə üzərində şəffaf, seçilə bilən mətn qatı ---- */
+const textPages=[];
+function dropText(p){if(!p||!p.tl)return;try{p.tt&&p.tt.cancel();}catch(e){}p.tl.remove();p.tl=null;p.tt=null;}
+async function mkText(i){const p=pages[i];
+  if(kind!=='pdf'||!p||p.tl||!p.on||!window.pdfjsLib||typeof pdfjsLib.renderTextLayer!=='function')return;
+  const d=document.createElement('div');d.className='tl';p.tl=d;p.el.appendChild(d);
+  try{const tc=await p.pg.getTextContent();if(p.tl!==d||!p.on)return;
+    d.style.setProperty('--scale-factor',W/p.w);
+    p.tt=pdfjsLib.renderTextLayer({textContentSource:tc,container:d,viewport:p.pg.getViewport({scale:W/p.w}),textDivs:[]});
+    await p.tt.promise;}catch(e){}
+  if(p.tl!==d)return;textPages.push(i);
+  while(textPages.length>3){const j=textPages.shift();if(j!==i)dropText(pages[j]);}}
+function ensureText(){if(kind!=='pdf'||!item||tool!=='pan'||!pages.length)return;
+  const a=pageAt(-ty/s),b=pageAt((-ty+vh)/s);for(let i=a;i<=b;i++)mkText(i);}
+// Seçilmiş mətn kopyalananda eyni ağıllı qaydada (kəsr, indeks, √) yenidən qurulur
+document.addEventListener('copy',e=>{
+  if(window._imgCopy)return;
+  if(!item||kind!=='pdf'||$('#viewerScreen').classList.contains('hidden'))return;
+  const sel=window.getSelection();if(!sel||sel.isCollapsed||!sel.rangeCount)return;const raw=sel.toString();
+  if(raw&&raw.replace(/\s/g,'').length<=3){e.clipboardData.setData('text/plain',raw);e.preventDefault();try{if(window.Android&&Android.copyText)Android.copyText(raw);}catch(x){}return;}
+  const r=sel.getRangeAt(0),parts=[];
+  pages.forEach((p,i)=>{if(!p.tl)return;const pr=p.el.getBoundingClientRect(),arr=[];
+    p.tl.querySelectorAll('span').forEach(el=>{if(!r.intersectsNode(el))return;let str=el.textContent;const tn=el.firstChild;
+      if(tn&&tn===r.startContainer&&tn===r.endContainer)str=str.slice(r.startOffset,r.endOffset);
+      else if(tn&&tn===r.startContainer)str=str.slice(r.startOffset);else if(tn&&tn===r.endContainer)str=str.slice(0,r.endOffset);
+      if(!str.trim())return;const b=el.getBoundingClientRect();
+      arr.push({s:str,x:(b.left-pr.left)/s,y:-(((b.top-pr.top)+.8*b.height)/s),f:b.height/s,w:b.width/s});});
+    if(arr.length)parts.push(normMath(composeText(arr,W).trim()));});
+  if(!parts.length)return;e.clipboardData.setData('text/plain',parts.join('\n\n'));e.preventDefault();});
+
+// Səhifəni yüksək keyfiyyətlə canvas-a çək (istəyə görə qeydlərlə birgə)
+async function renderPageCanvas(i,targetW,withAnn){
+  const pg=pages[i],wpx=Math.max(200,Math.min(Math.round(targetW),Math.floor(Math.sqrt(14e6/pg.ratio)))),hpx=Math.round(wpx*pg.ratio);
+  const c=document.createElement('canvas');c.width=wpx;c.height=hpx;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,wpx,hpx);
+  if(kind==='pdf')await pg.pg.render({canvasContext:x,viewport:pg.pg.getViewport({scale:wpx/pg.w})}).promise;else x.drawImage(pg.im,0,0,wpx,hpx);
+  if(withAnn&&strokes.some(st=>st.p===i)){const a=document.createElement('canvas');a.width=wpx;a.height=hpx;const ax=a.getContext('2d');
+    strokes.forEach(st=>{if(st.p===i)paint(ax,st,wpx);});x.drawImage(a,0,0);a.width=0;}   // pozan yalnız qeydləri silir, səhifəni yox
+  return c;}
+async function copyText(t,ta){try{if(window.Android&&Android.copyText){Android.copyText(String(t));return true;}}catch(e){}
+  try{await navigator.clipboard.writeText(t);return true;}catch(e){}
+  try{ta.focus();ta.select();return document.execCommand('copy');}catch(e){return false;}}
+function showText(text,i,fromOcr,rect){
+  showModal(`<div class="modal-title">Mətn • səhifə ${i+1}${fromOcr?' (OCR)':''}</div><textarea id="cpTxt" class="modal-input" style="height:44vh;resize:none;font-size:14px;line-height:1.5"></textarea><div style="color:#888;font-size:12px;margin-top:8px">Hissəni seçib kopyalaya və ya düzəliş edə bilərsən.</div><div class="modal-actions"><button class="btn" id="cpClose">Bağla</button>${fromOcr?'':'<button class="btn" id="cpOcr">OCR ilə oxu</button>'}<button class="btn primary" id="cpAll">Hamısını kopyala</button></div>`,true);
+  $('#modalBox').style.maxWidth='92vw';const ta=$('#cpTxt');ta.value=text;
+  $('#cpClose').onclick=hideModal;
+  const o=$('#cpOcr');if(o)o.onclick=()=>runOcr(i,rect);
+  $('#cpAll').onclick=async()=>{showToast(await copyText(ta.value,ta)?'Kopyalandı ✓':'Kopyalanmadı – mətni seçib əl ilə kopyala');};}
+let tessP=null;
+function loadTess(){if(window.Tesseract)return Promise.resolve();
+  return tessP||(tessP=new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.0/dist/tesseract.min.js';
+    sc.onload=res;sc.onerror=()=>{tessP=null;rej(new Error('internet yoxdur'));};document.head.appendChild(sc);}));}
+async function runOcr(i,rect){
+  showModal('<div class="modal-title">OCR işləyir…</div><div id="ocrMsg" style="color:#aaa;font-size:14px">Hazırlanır…</div>',true);
+  try{await loadTess();let c=await renderPageCanvas(i,kind==='image'?Math.min(pages[0].im.naturalWidth,2600):(rect?Math.min(W*Math.min(7,Math.max(3,1600/(rect.x1-rect.x0))),3600):2000),false);
+    if(rect){const f=c;c=cropCanvas(f,rect);f.width=0;}
+    const w=await Tesseract.createWorker('aze+eng',1,{logger:m=>{const e=$('#ocrMsg');if(e&&m.status)e.textContent=m.status+(m.progress?' '+Math.round(m.progress*100)+'%':'');}});
+    const r=await w.recognize(c);await w.terminate();c.width=0;
+    showText(normMath(r.data.text.replace(/\n{3,}/g,'\n\n').trim()),i,true);
+  }catch(e){hideModal();showToast('OCR alınmadı: '+(e.message||'xəta'));}}
+$('#copyBtn').onclick=async()=>{if(kind==='video'){vidCopy();return;}if(!item||!pages.length)return;const i=curPage();let text='';
+  if(kind==='pdf'){try{text=await pageText(i);}catch(e){}}
+  if(text.replace(/\s/g,'').length>=15){showText(text,i,false);return;}
+  showModal(`<div class="modal-title">Səhifə ${i+1}: mətn qatı yoxdur</div><div style="color:#bbb;font-size:14px;line-height:1.5">Bu səhifə şəkil kimidir. OCR ilə oxuya bilərəm (internet lazımdır, düsturlar dəqiq çıxmaya bilər).</div><div class="modal-actions"><button class="btn" id="ocNo">Xeyr</button><button class="btn primary" id="ocYes">OCR et</button></div>`,true);
+  $('#ocNo').onclick=hideModal;$('#ocYes').onclick=()=>runOcr(i);};
+$('#saveBtn').onclick=async()=>{if(kind==='video'){vidSave();return;}if(!item||!pages.length)return;const i=curPage();showToast('Səhifə '+(i+1)+' hazırlanır…');
+  try{const c=await renderPageCanvas(i,kind==='image'?Math.min(pages[0].im.naturalWidth,4096):1800,true);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.92));c.width=0;if(!blob)throw new Error('şəkil alınmadı');
+    const u=URL.createObjectURL(blob),name=((item.name||'sehife')+'_sehife'+(i+1)+'.jpg').replace(/[^\w.\-]+/g,'_');
+    const file=new File([blob],name,{type:'image/jpeg'}),canShare=!!(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]})));
+    window._mc=()=>URL.revokeObjectURL(u);
+    showModal(`<div class="modal-title">Səhifə ${i+1} hazırdır</div><img src="${u}" style="width:100%;max-height:42vh;object-fit:contain;border-radius:10px;background:#fff"><div style="color:#888;font-size:12px;margin-top:8px">Yükləmə işləməsə, şəkilə uzun basıb saxla və ya «Paylaş» seç.</div><div class="modal-actions"><button class="btn" id="svClose">Bağla</button>${canShare?'<button class="btn" id="svShare">Paylaş</button>':''}<button class="btn primary" id="svDl">Qalereyaya yüklə</button></div>`,true);
+    $('#svClose').onclick=hideModal;
+    $('#svDl').onclick=()=>{const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();showToast('Yükləmə başladı – Qalereya/Yükləmələrə bax');};
+    const sh=$('#svShare');if(sh)sh.onclick=()=>{navigator.share({files:[file]}).catch(()=>{});};
+  }catch(e){showToast('Alınmadı: '+(e.message||'xəta'));}};
+
+
+/* ---- Video: kadr kopyala / saxla / kəs (qeydlərlə birgə) ---- */
+function vidFrame(withAnn){const v=vp.querySelector('video');if(!v||!v.videoWidth)return null;
+  const er=v.getBoundingClientRect(),pr=vp.getBoundingClientRect(),r=v.videoWidth/v.videoHeight;
+  const dw=Math.min(er.width,er.height*r),dh=dw/r,dx=er.left-pr.left+(er.width-dw)/2,dy=er.top-pr.top+(er.height-dh)/2;
+  const sc=Math.min(1,2400/Math.max(v.videoWidth,v.videoHeight)),ow=Math.round(v.videoWidth*sc),oh=Math.round(v.videoHeight*sc);
+  const c=document.createElement('canvas');c.width=ow;c.height=oh;const x=c.getContext('2d');x.drawImage(v,0,0,ow,oh);
+  if(withAnn&&strokes.length){const a=document.createElement('canvas');a.width=ow;a.height=oh;const ax=a.getContext('2d'),k=ow/dw;ax.translate(-dx*k,-dy*k);
+    strokes.forEach(st=>paint(ax,st,vp.clientWidth*k));x.drawImage(a,0,0);a.width=0;}
+  return c;}
+async function vidCopyCanvas(c){try{const b=await new Promise(r=>c.toBlob(r,'image/png'));if(!b)throw 0;await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);if(!window.Android)showToast('Kopyalandı ✓');}catch(e){showToast('Kopyalanmadı');}}
+function vidCopy(){const v=vp.querySelector('video');if(v)v.pause();const c=vidFrame(true);if(!c){showToast('Kadr alınmadı');return;}vidCopyCanvas(c);}
+async function vidResult(c,title){const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.92));if(!blob){showToast('Alınmadı');return;}
+  const u=URL.createObjectURL(blob),name=((item&&item.name||'video')+'_kadr_'+Date.now()%100000+'.jpg').replace(/[^\w.\-]+/g,'_');
+  const file=new File([blob],name,{type:'image/jpeg'}),canShare=!!(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]})));
+  window._mc=()=>URL.revokeObjectURL(u);
+  showModal(`<div class="modal-title">${title}</div><img src="${u}" style="width:100%;max-height:42vh;object-fit:contain;border-radius:10px;background:#000"><div class="modal-actions"><button class="btn" id="svClose">Bağla</button>${canShare?'<button class="btn" id="svShare">Paylaş</button>':''}<button class="btn primary" id="svDl">Qalereyaya yüklə</button></div>`,true);
+  $('#svClose').onclick=hideModal;
+  $('#svDl').onclick=()=>{const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();showToast('Yükləmə başladı – Qalereya/Yükləmələrə bax');};
+  const sh=$('#svShare');if(sh)sh.onclick=()=>{navigator.share({files:[file]}).catch(()=>{});};}
+function vidSave(){const v=vp.querySelector('video');if(v)v.pause();const c=vidFrame(true);if(!c){showToast('Kadr alınmadı');return;}vidResult(c,'Kadr hazırdır');}
+function vidCrop(){const v=vp.querySelector('video');if(!v)return;v.pause();const c=vidFrame(true);if(!c){showToast('Kadr alınmadı');return;}
+  const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:900;background:#000;display:flex;flex-direction:column;';
+  ov.innerHTML='<div id="vcSt" style="flex:1;position:relative;overflow:hidden;touch-action:none"><div style="position:absolute;top:8px;left:0;right:0;text-align:center;color:#aaa;font-size:13px;pointer-events:none;z-index:2">Barmaqla çərçivə çək</div><div id="vcBox" style="position:absolute;border:2px solid #4af;background:rgba(68,170,255,.15);display:none;pointer-events:none;z-index:2"></div></div><div style="display:flex;gap:8px;padding:12px;background:#111"><button class="btn" id="vcNo" style="flex:1">Ləğv</button><button class="btn" id="vcSz" style="flex:1">📏 Kiçik</button><button class="btn" id="vcCp" style="flex:1">📋 Kopyala</button><button class="btn primary" id="vcOk" style="flex:1">Saxla</button></div>';
+  document.body.appendChild(ov);const st=ov.querySelector('#vcSt'),bx=ov.querySelector('#vcBox');
+  c.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);max-width:100%;max-height:100%;';st.appendChild(c);
+  let a=null,b=null,rc=null,dn=false;const P=e=>{const r=c.getBoundingClientRect();return[Math.max(r.left,Math.min(r.right,e.clientX)),Math.max(r.top,Math.min(r.bottom,e.clientY))];};
+  const draw=()=>{if(!a||!b)return;const sr=st.getBoundingClientRect();rc={l:Math.min(a[0],b[0]),t:Math.min(a[1],b[1]),r:Math.max(a[0],b[0]),b:Math.max(a[1],b[1])};
+    Object.assign(bx.style,{display:'block',left:rc.l-sr.left+'px',top:rc.t-sr.top+'px',width:rc.r-rc.l+'px',height:rc.b-rc.t+'px'});};
+  st.addEventListener('pointerdown',e=>{dn=true;a=P(e);b=a;try{st.setPointerCapture(e.pointerId);}catch(_){}draw();});
+  st.addEventListener('pointermove',e=>{if(!dn)return;b=P(e);draw();});st.addEventListener('pointerup',()=>{dn=false;});st.addEventListener('pointercancel',()=>{dn=false;});
+  const out=()=>{const cr=c.getBoundingClientRect();let x0=0,y0=0,w=c.width,h=c.height;
+    if(rc&&rc.r-rc.l>12&&rc.b-rc.t>12){x0=(rc.l-cr.left)/cr.width*c.width;y0=(rc.t-cr.top)/cr.height*c.height;w=(rc.r-rc.l)/cr.width*c.width;h=(rc.b-rc.t)/cr.height*c.height;}
+    const dispW=(rc&&rc.r-rc.l>12)?(rc.r-rc.l):cr.width,tgt=copySz==='l'?w:Math.min(w,dispW*(window.devicePixelRatio||1)*SZ_F[copySz]),sc=Math.max(.05,tgt/w);
+    const o=document.createElement('canvas');o.width=Math.max(1,Math.round(w*sc));o.height=Math.max(1,Math.round(h*sc));o.getContext('2d').drawImage(c,x0,y0,w,h,0,0,o.width,o.height);return o;};
+  const szb=ov.querySelector('#vcSz');szb.textContent='📏 '+SZ_L[copySz];szb.onclick=()=>{const k=nextSz();szb.textContent='📏 '+SZ_L[k];};
+  ov.querySelector('#vcNo').onclick=()=>{ov.remove();c.width=0;};
+  ov.querySelector('#vcCp').onclick=()=>{const o=out();vidCopyCanvas(isPad()?padForNotes(o):o);};
+  ov.querySelector('#vcOk').onclick=()=>{const o=out();ov.remove();c.width=0;vidResult(o,'Seçilmiş hissə');};}
+$('#cropBtn').addEventListener('click',e=>{if(kind==='video'){e.stopImmediatePropagation();vidCrop();}},true);
+
+/* ============ ÇƏRÇİVƏ İLƏ SEÇİM (✂️): barmaqla çək; künc/kənardan tutub ölçüsünü, içindən tutub yerini dəyiş ============ */
+const cropBox=$('#cropBox'),cropBar=$('#cropBar');
+let csel=null,cropDrag=null,cropReady=false;   // csel: səhifəyə görə nisbi düzbucaqlı (W vahidi ilə)
+const cropRect=()=>({x0:csel.x0,y0:csel.y0,x1:csel.x1,y1:csel.y1});
+function clearCrop(){csel=null;cropDrag=null;cropReady=false;cropBox.style.display='none';cropBar.classList.remove('show');}
+function cropScreen(){const p=pages[csel.p];return{l:tx+csel.x0*s,t:ty+(p.top+csel.y0)*s,w:(csel.x1-csel.x0)*s,h:(csel.y1-csel.y0)*s};}
+function cropPaint(){const p=pages[csel.p];if(!p){clearCrop();return;}
+  const c=cropScreen(),b=cropBox.style;b.display='block';b.left=c.l+'px';b.top=c.t+'px';b.width=c.w+'px';b.height=c.h+'px';
+  if(cropReady&&!cropDrag){cropBar.classList.add('show');const bw=cropBar.offsetWidth||300;
+    let by=c.t+c.h+12;if(by+50>vh)by=c.t-58;if(by<8)by=Math.max(8,Math.min(vh-58,c.t+10));
+    cropBar.style.left=clamp(c.l+c.w/2,bw/2+8,vw-bw/2-8)+'px';cropBar.style.top=by+'px';}
+  else cropBar.classList.remove('show');}
+function cropDown(x,y){cropReady=false;cropBar.classList.remove('show');
+  if(csel){const c=cropScreen(),T=Math.min(28,Math.max(10,Math.min(c.w,c.h)/2)),inX=x>c.l-T&&x<c.l+c.w+T,inY=y>c.t-T&&y<c.t+c.h+T;
+    let L=inY&&Math.abs(x-c.l)<T,R=inY&&Math.abs(x-(c.l+c.w))<T,Tp=inX&&Math.abs(y-c.t)<T,B=inX&&Math.abs(y-(c.t+c.h))<T;
+    if(L&&R){if(Math.abs(x-c.l)<=Math.abs(x-(c.l+c.w)))R=false;else L=false;}
+    if(Tp&&B){if(Math.abs(y-c.t)<=Math.abs(y-(c.t+c.h)))B=false;else Tp=false;}
+    if(L||R||Tp||B){cropDrag={m:'r',L,R,T:Tp,B,o:{...csel},sx:x,sy:y};return;}
+    if(x>c.l&&x<c.l+c.w&&y>c.t&&y<c.t+c.h){cropDrag={m:'m',o:{...csel},sx:x,sy:y};return;}}
+  const cy=(y-ty)/s,i=pageAt(cy),p=pages[i];if(!p)return;
+  const ox=clamp((x-tx)/s,0,W),oy=clamp(cy-p.top,0,p.hh);
+  csel={p:i,x0:ox,y0:oy,x1:ox,y1:oy};cropDrag={m:'n',ox,oy};kick();}
+function cropMove(x,y){if(!cropDrag||!csel)return;const p=pages[csel.p],d=cropDrag,MIN=8/s;
+  if(d.m==='n'){const cx=clamp((x-tx)/s,0,W),cy=clamp((y-ty)/s-p.top,0,p.hh);
+    csel.x0=Math.min(d.ox,cx);csel.x1=Math.max(d.ox,cx);csel.y0=Math.min(d.oy,cy);csel.y1=Math.max(d.oy,cy);}
+  else{const dx=(x-d.sx)/s,dy=(y-d.sy)/s,o=d.o;
+    if(d.m==='m'){const w=o.x1-o.x0,h=o.y1-o.y0,nx=clamp(o.x0+dx,0,W-w),ny=clamp(o.y0+dy,0,p.hh-h);csel.x0=nx;csel.x1=nx+w;csel.y0=ny;csel.y1=ny+h;}
+    else{if(d.L)csel.x0=clamp(o.x0+dx,0,o.x1-MIN);if(d.R)csel.x1=clamp(o.x1+dx,o.x0+MIN,W);
+      if(d.T)csel.y0=clamp(o.y0+dy,0,o.y1-MIN);if(d.B)csel.y1=clamp(o.y1+dy,o.y0+MIN,p.hh);}}
+  kick();}
+function cropUp(){if(!cropDrag)return;cropDrag=null;if(!csel)return;
+  if((csel.x1-csel.x0)*s<8||(csel.y1-csel.y0)*s<8){clearCrop();return;}cropReady=true;kick();}
+function cropCancelDrag(){if(!cropDrag)return;cropUp();}
+const SZ_F={n:1,k:.6,x:.5,s:1,m:2,l:4},SZ_L={n:'Notes',k:'Notes−',x:'Mini',s:'Kiçik',m:'Orta',l:'Böyük'};
+const isPad=()=>copySz==='n'||copySz==='k';   // Notes rejimi: şəkil ekran enində ağ kətanın solunda olur, Samsung Notes onu sığdıranda yazı ekrandakı ölçüdə qalır
+function padForNotes(c){const sw=Math.round(window.innerWidth*(window.devicePixelRatio||1)),W2=Math.max(sw,c.width),o=document.createElement('canvas');o.width=W2;o.height=c.height;
+  const x=o.getContext('2d');x.drawImage(c,0,0);c.width=0;return o;}   // kənar hissə şəffaf
+let copySz='s';try{const v=localStorage.getItem('copySz2');if(SZ_F[v])copySz=v;}catch(e){}
+function nextSz(){copySz={s:'m',m:'l',l:'x',x:'n',n:'k',k:'s'}[copySz]||'s';try{localStorage.setItem('copySz2',copySz);}catch(e){}return copySz;}
+function cropCanvas(c,r){const k=c.width/W,w=Math.max(1,Math.round((r.x1-r.x0)*k)),h=Math.max(1,Math.round((r.y1-r.y0)*k)),o=document.createElement('canvas');
+  o.width=w;o.height=h;o.getContext('2d').drawImage(c,r.x0*k,r.y0*k,w,h,0,0,w,h);return o;}
+async function cropImage(forCopy){const r=cropRect(),cw=r.x1-r.x0;
+  const nat=kind==='image'?Math.min(pages[0].im.naturalWidth,4096):0,base=W*Math.max(.5,s*(window.devicePixelRatio||1)*SZ_F[copySz]);   // Kiçik = ekranda göründüyü ölçü
+  const tw=kind==='image'?(copySz==='l'?nat:Math.min(nat,base)):base;
+  const full=await renderPageCanvas(csel.p,tw,true),out=cropCanvas(full,r);full.width=0;return(forCopy&&isPad())?padForNotes(out):out;}
+/* seçim çərçivəsinin içinə düşən hərfləri götürür (sözün ortasından da kəsmək olur) */
+function sliceByX(t,X0,X1){const ch=Array.from(t.s),n=ch.length;if(!n)return null;if(!(t.w>0))return(t.x>=X0&&t.x<=X1)?t:null;
+  const wt=ch.map(c=>/[iIl1jtf.,:;|!'`]/.test(c)?.45:/[mwMW@]/.test(c)?1.5:/\s/.test(c)?.5:1),tot=wt.reduce((a,b)=>a+b,0);
+  let acc=0,first=-1,last=-1,a0=0,a1=0;for(let i=0;i<n;i++){const c=t.x+(acc+wt[i]/2)/tot*t.w;if(c>=X0&&c<=X1){if(first<0){first=i;a0=acc;}last=i;a1=acc+wt[i];}acc+=wt[i];}
+  if(first<0)return null;return{s:ch.slice(first,last+1).join(''),x:t.x+a0/tot*t.w,y:t.y,f:t.f,w:(a1-a0)/tot*t.w};}
+async function cropText(){if(kind!=='pdf')return'';const r=cropRect(),pg=pages[csel.p],tc=await pg.pg.getTextContent(),k=pg.w/W;
+  const top=pg.w*pg.ratio-r.y0*k,bot=pg.w*pg.ratio-r.y1*k,X0=r.x0*k,X1=r.x1*k;
+  const it=tc.items.filter(t=>t.str&&t.str.trim()!=='').map(t=>({s:t.str,x:t.transform[4],y:t.transform[5],f:Math.hypot(t.transform[2],t.transform[3])||t.height||10,w:t.width||0}))
+    .filter(t=>t.y>=bot-.3*t.f&&t.y<=top+.3*t.f&&t.x<X1&&t.x+t.w>X0)
+    .map(t=>sliceByX(t,X0,X1)).filter(t=>t&&t.s.trim()!=='');
+  return normMath(composeText(it,pg.w).replace(/(\p{L})-\n(\p{Ll})/gu,'$1$2').trim());}
+const safeName=(suf,ext)=>((item.name||'sehife')+'_'+suf+'_s'+(csel?csel.p+1:1)+'.'+(ext||'jpg')).replace(/[^\w.\-]+/g,'_');
+function offerImage(blob,name,title){const u=URL.createObjectURL(blob),file=new File([blob],name,{type:blob.type}),canShare=!!(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]})));
+  window._mc=()=>URL.revokeObjectURL(u);
+  showModal(`<div class="modal-title">${title}</div><img src="${u}" style="width:100%;max-height:42vh;object-fit:contain;border-radius:10px;background:#fff"><div style="color:#888;font-size:12px;margin-top:8px">Yükləmə işləməsə, şəkilə uzun basıb saxla və ya «Paylaş» seç.</div><div class="modal-actions"><button class="btn" id="ofClose">Bağla</button>${canShare?'<button class="btn" id="ofShare">Paylaş</button>':''}<button class="btn primary" id="ofDl">Qalereyaya yüklə</button></div>`,true);
+  $('#ofClose').onclick=hideModal;
+  $('#ofDl').onclick=()=>{const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();showToast('Yükləmə başladı – Qalereya/Yükləmələrə bax');};
+  const sh=$('#ofShare');if(sh)sh.onclick=()=>{navigator.share({files:[file]}).catch(()=>{});};}
+const toBlob=(c,type,q)=>new Promise(r=>c.toBlob(r,type,q));
+$('#cbClose').onclick=clearCrop;
+$('#cbSize').textContent='📏 '+SZ_L[copySz];$('#cbSize').onclick=()=>{const k=nextSz();$('#cbSize').textContent='📏 '+SZ_L[k];showToast('Kopya ölçüsü: '+SZ_L[k]);};
+$('#cbSave').onclick=async()=>{if(!csel)return;showToast('Hazırlanır…');
+  try{const c=await cropImage(),blob=await toBlob(c,'image/jpeg',.92);c.width=0;if(!blob)throw new Error('şəkil alınmadı');offerImage(blob,safeName('secim'),'Seçilmiş hissə hazırdır');}
+  catch(e){showToast('Alınmadı: '+(e.message||'xəta'));}};
+/* ---- Şəkli panoya qoy: 1) müasir API  2) seçim + execCommand('copy') (Android WebView)  3) alınmasa yükləmə/paylaş pəncərəsi ---- */
+async function copyImageToClipboard(canvas,blob){
+  try{if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({[blob.type||'image/png']:blob})]);return 'api';}}catch(e){}
+  let st=null;
+  try{
+    const mw=1100,k=Math.min(1,mw/canvas.width),sm=document.createElement('canvas');   // WebView panosu böyük məlumatı qəbul etmir – ölçünü kiçilt
+    sm.width=Math.max(1,Math.round(canvas.width*k));sm.height=Math.max(1,Math.round(canvas.height*k));
+    const x=sm.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,sm.width,sm.height);x.drawImage(canvas,0,0,sm.width,sm.height);
+    const dataUrl=sm.toDataURL('image/jpeg',.88);sm.width=0;
+    st=document.createElement('div');st.id='cpStage';st.contentEditable='true';
+    const im=new Image();im.src=dataUrl;st.appendChild(im);document.body.appendChild(st);
+    try{await im.decode();}catch(e){}
+    window._imgCopy=true;
+    st.focus();const rg=document.createRange();rg.selectNode(im);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(rg);
+    const ok=document.execCommand('copy');
+    sel.removeAllRanges();st.remove();st=null;
+    setTimeout(()=>{window._imgCopy=false;},300);
+    return ok?'html':false;
+  }catch(e){if(st)st.remove();window._imgCopy=false;return false;}}
+$('#cbCopy').onclick=async()=>{if(!csel)return;
+  if(navigator.clipboard&&window.ClipboardItem){   // Chrome: kopyalama əmri toxunuşla eyni anda verilir, şəkil sonra hazırlanır
+    showToast('Hazırlanır…');
+    try{const bp=cropImage(true).then(c=>toBlob(c,'image/png').then(b=>{c.width=0;if(!b)throw new Error('şəkil alınmadı');return b;}));
+      await navigator.clipboard.write([new ClipboardItem({'image/png':bp})]);showToast('Şəkil panoya kopyalandı ✓');return;}catch(e){}}
+  showToast('Hazırlanır…');
+  try{const c=await cropImage(true),blob=await toBlob(c,'image/png');if(!blob){c.width=0;throw new Error('şəkil alınmadı');}
+    const r=await copyImageToClipboard(c,blob);c.width=0;
+    if(r==='api')showToast('Şəkil panoya kopyalandı ✓');
+    else if(r==='html')showToast('Kopyalandı ✓ – yapışmasa «📤 Paylaş» istifadə et');
+    else offerImage(blob,safeName('secim','png'),'Bu cihazda şəkli panoya kopyalamaq alınmadı');}
+  catch(e){showToast('Alınmadı: '+(e.message||'xəta'));}};
+$('#cbShare').onclick=async()=>{if(!csel)return;showToast('Hazırlanır…');
+  try{const c=await cropImage(),blob=await toBlob(c,'image/png');c.width=0;if(!blob)throw new Error('şəkil alınmadı');
+    const name=safeName('secim','png'),file=new File([blob],name,{type:'image/png'});
+    if(navigator.share){try{await navigator.share({files:[file]});return;}catch(err){if(err&&err.name==='AbortError')return;}}
+    offerImage(blob,name,'Seçilmiş hissə hazırdır');}
+  catch(e){showToast('Alınmadı: '+(e.message||'xəta'));}};
+$('#cbText').onclick=async()=>{if(!csel)return;const r=cropRect(),i=csel.p;let t='';try{t=await cropText();}catch(e){}
+  if(t.replace(/\s/g,'').length>=3){showText(t,i,false,r);return;}
+  showModal(`<div class="modal-title">Bu hissədə mətn qatı yoxdur</div><div style="color:#bbb;font-size:14px;line-height:1.5">Seçilmiş hissəni OCR ilə oxuya bilərəm (internet lazımdır, düsturlar dəqiq çıxmaya bilər).</div><div class="modal-actions"><button class="btn" id="ocNo">Xeyr</button><button class="btn primary" id="ocYes">OCR et</button></div>`,true);
+  $('#ocNo').onclick=hideModal;$('#ocYes').onclick=()=>runOcr(i,r);};
+
+/* ---- Video idarə paneli: barmaqla ekranda istənilən yerə daşınır ---- */
+const fmt=t=>{t=Math.max(0,t|0);return(t/60|0)+':'+String(t%60).padStart(2,'0');};
+let seeking=false;const vc=$('#customVideoControls'),seek=$('#customSeekBar');
+$('#customPlayBtn').onclick=()=>{if(activeVideo)activeVideo.paused?activeVideo.play():activeVideo.pause();};
+seek.oninput=e=>{seeking=true;if(!activeVideo||!activeVideo.duration)return;const t=e.target.value/100*activeVideo.duration;activeVideo.currentTime=t;$('#customCurrentTime').textContent=fmt(t);};
+seek.onchange=()=>{seeking=false;};
+{let g=null;const h=$('#dragHandle');
+  h.addEventListener('pointerdown',e=>{const r=vc.getBoundingClientRect();g={x:e.clientX-r.left,y:e.clientY-r.top};
+    vc.style.transform='none';vc.style.bottom='auto';vc.style.left=r.left+'px';vc.style.top=r.top+'px';h.setPointerCapture(e.pointerId);e.preventDefault();});
+  h.addEventListener('pointermove',e=>{if(!g)return;vc.style.left=clamp(e.clientX-g.x,0,innerWidth-vc.offsetWidth)+'px';vc.style.top=clamp(e.clientY-g.y,0,innerHeight-vc.offsetHeight)+'px';e.preventDefault();});
+  h.addEventListener('pointerup',()=>g=null);h.addEventListener('pointercancel',()=>g=null);}
+
+function flushAll(){if(!item)return;
+  if(kind==='video'){if(activeVideo)putPos(item.id,{v:activeVideo.currentTime||0});}
+  else{savePos();if(dirty)dbPutAnn(item.id,strokes);}}
+window.addEventListener('pagehide',flushAll);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')flushAll();});
+(async function init(){try{await loadHome();}catch(e){console.error(e);showToast('Xəta baş verdi');}})();
+</script>
+<div style="position:fixed;right:6px;bottom:2px;font-size:9px;color:#666;z-index:1;pointer-events:none">v12</div>
+</body>
+</html>
