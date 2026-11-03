@@ -148,3 +148,4 @@ t=open(I,encoding='utf-8').read()
 t+="\n(function(){var w=function(x){Android.copyText(String(x));return Promise.resolve();};try{navigator.clipboard.writeText=w;}catch(e){}try{Object.defineProperty(navigator.clipboard,'writeText',{value:w,configurable:true});}catch(e){}})();\n"
 open(I,'w',encoding='utf-8').write(t)
 PY
+bash enable-rotation.sh _apk
